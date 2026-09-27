@@ -1,0 +1,13 @@
+/.env
+.DS_Store
+/storage/logs/*
+!/storage/logs/.gitkeep
+/storage/sessions/*
+!/storage/sessions/.gitkeep
+/storage/rate_limits/*
+!/storage/rate_limits/.gitkeep
+/vendor/
+/node_modules/
+
+__pycache__/
+*.pyc

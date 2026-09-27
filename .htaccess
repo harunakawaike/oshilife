@@ -1,0 +1,2 @@
+# プロジェクト全体を公開しない。DocumentRoot は public/ を指定する。
+Require all denied
