@@ -53,7 +53,7 @@ users（利用者）
 user_oshis（利用者ID ＋ 推しID）
   │ 多くの利用者が同じ推しを参照
   ▼
-oshis（共有の名前・種別・絵文字・テーマ色・作成者・有効状態）
+oshis（共有の名前・種別・絵文字・作成者・有効状態）
   │ 1つの推しに複数のメンバー
   ▼
 members（名前・カラー名・ハート・HEX・有効状態）
@@ -76,7 +76,7 @@ members（名前・カラー名・ハート・HEX・有効状態）
 | GET | /api/oshis/list.php | 有効な共有推しの一覧 |
 | GET | /api/oshis/search.php?q=名前 | 名前で検索。登録済み状態付き |
 | POST | /api/oshis/create.php | 共有推しの作成＋本人の登録 |
-| POST | /api/oshis/update.php | 作成者本人が名前・種別・絵文字・テーマカラーを編集 |
+| POST | /api/oshis/update.php | 作成者本人が名前・種別・絵文字を編集 |
 | POST | /api/oshis/follow.php | 本人の登録を追加 |
 | POST | /api/oshis/unfollow.php | 本人の登録だけを解除 |
 | GET | /api/oshis/my.php | 本人の登録済み推し一覧 |
@@ -175,8 +175,18 @@ PDOはPHPからDBに接続する標準機能です。prepareでSQLの形を固�
 
 - 新規ファイル：api/oshis/update.php、public/api/oshis/update.php。
 - 変更：oshi_detail.php、oshis.js、oshis.css、oshi_service.php、oshi_repository.php、統合テストとドキュメント。
-- updateOshi()は対象をロックして作成者を確認し、updateOshiRecord()は表示情報4項目だけをUPDATEします。
+- updateOshi()は対象をロックして作成者を確認し、updateOshiRecord()は表示情報3項目だけをUPDATEします。
 - 他ユーザーの操作403、未認証401、CSRF不足419、入力不備422、重複409、無効/存在しない推し404を確認済み。
 - 同じ内容を保存しても成功します。メンバー・登録の関係を保持し、他ユーザーにも更新後の共有情報を返します。
 - HTTP109件が成功。検証終了後も既存のusers=1、user_settings=1、oshis=1、members=4、user_oshis=1を維持。一時データだけを清掃しました。
 - ブラウザーでの編集ボタン・キャンセル・保存操作は未確認です。
+
+## 推しテーマカラーの廃止
+
+推し本体は名前・種別・絵文字だけを登録・編集します。新規登録、編集、詳細表示、API、推しCSVからテーマカラーを外しました。メンバーのカラー名・ハート・HEXは継続して使用します。既存データを削除しないため、DBのoshis.theme_colorは旧仕様との互換用に残していますが、アプリは読み書きしません。DB変更の実行は不要です。
+
+## メンバーカラーの選び方
+
+メンバー追加では、色名付きのハートを選ぶだけで登録できます。色名と保存用の色コードは自動で設定されるため、HEXを入力する必要はありません。「色を細かく調整する（任意）」を開けば、色見本から好きな色を選び、色名も変更できます。メンバー一覧はハートと色名を表示します。
+
+実装では `oshi_validator.php` の `MEMBER_COLOR_PRESETS` をHTMLのdata属性へ渡し、`oshis.js` の `selectMemberColor()` が選択されたハートに合わせて入力値を更新します。DB/APIでは引き続きhex_colorを内部の保存形式として利用し、既存データの変換やDB変更は不要です。

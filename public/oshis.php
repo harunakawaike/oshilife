@@ -39,7 +39,6 @@ require PROJECT_ROOT . '/includes/header.php';
                 <?php foreach (OSHI_TYPES as $value => $label): ?><option value="<?= e($value) ?>"><?= e($label) ?></option><?php endforeach; ?>
             </select><p class="field-error" id="oshi-error-oshi_type"></p></div>
             <div><label class="form-label" for="oshi-emoji">推しの絵文字</label><input id="oshi-emoji" name="emoji" placeholder="💎 や 👑🐃" maxlength="64" required aria-describedby="emoji-help oshi-error-emoji"><p class="caption" id="emoji-help">複数の絵文字・記号を使えます（32文字以内）。</p><p class="field-error" id="oshi-error-emoji"></p></div>
-            <div><label class="form-label" for="oshi-color">テーマカラー（HEX）</label><input id="oshi-color" name="theme_color" value="#986879" maxlength="7" pattern="#[0-9a-fA-F]{6}" required aria-describedby="oshi-error-theme_color"><p class="field-error" id="oshi-error-theme_color"></p></div>
         </div>
         <p class="form-message" id="create-message" role="alert" tabindex="-1"></p>
         <button class="button primary" type="submit">作成して自分の推しに追加</button>

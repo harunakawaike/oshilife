@@ -44,7 +44,7 @@ $oshisPath = $directory . '/oshis.csv';
 $membersPath = $directory . '/members.csv';
 $name = 'CSV検証-' . $key;
 try {
-    file_put_contents($oshisPath, "name,oshi_type,emoji,theme_color\n{$name},group,👑🐃,#986879\n");
+    file_put_contents($oshisPath, "name,oshi_type,emoji\n{$name},group,👑🐃\n");
     file_put_contents($membersPath, "oshi_name,name,color_name,heart_emoji,hex_color\n{$name},メンバーA,pink,🩷,#E7A6C0\n");
     $arguments = ["--creator-id={$id}", "--oshis={$oshisPath}", "--members={$membersPath}"];
     runImport($arguments, 0);

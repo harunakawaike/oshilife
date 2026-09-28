@@ -7,7 +7,7 @@ require_once __DIR__ . '/../../config/database.php';
 function findOshis(PDO $pdo, int $userId, string $query = '', int $offset = 0): array
 {
     // user_idはセッションから渡す。LOCATEにより検索語の%や_も普通の文字として扱う。
-    $statement = $pdo->prepare('SELECT o.id, o.name, o.oshi_type, o.emoji, o.theme_color,
+    $statement = $pdo->prepare('SELECT o.id, o.name, o.oshi_type, o.emoji,
         CASE WHEN uo.id IS NULL THEN 0 ELSE 1 END AS is_followed
         FROM oshis o LEFT JOIN user_oshis uo ON uo.oshi_id = o.id AND uo.user_id = :user_id
         WHERE o.is_active = 1 AND LOCATE(:query, o.name) > 0 ORDER BY o.name, o.id LIMIT 51 OFFSET :offset');
@@ -21,7 +21,7 @@ function findOshis(PDO $pdo, int $userId, string $query = '', int $offset = 0): 
 /** 中間テーブルuser_oshisをたどり、本人が登録した有効な推しだけを返す。 */
 function findMyOshis(PDO $pdo, int $userId): array
 {
-    $statement = $pdo->prepare('SELECT o.id, o.name, o.oshi_type, o.emoji, o.theme_color, uo.registered_at
+    $statement = $pdo->prepare('SELECT o.id, o.name, o.oshi_type, o.emoji, uo.registered_at
         FROM user_oshis uo INNER JOIN oshis o ON o.id = uo.oshi_id
         WHERE uo.user_id = :user_id AND o.is_active = 1 ORDER BY uo.registered_at DESC, uo.id DESC');
     $statement->execute(['user_id' => $userId]);
@@ -31,7 +31,7 @@ function findMyOshis(PDO $pdo, int $userId): array
 /** 詳細を読み、本人の登録状態と作成者かどうかを返す。個人のメール等は返さない。 */
 function findOshiDetail(PDO $pdo, int $id, int $userId): ?array
 {
-    $statement = $pdo->prepare('SELECT o.id, o.name, o.oshi_type, o.emoji, o.theme_color,
+    $statement = $pdo->prepare('SELECT o.id, o.name, o.oshi_type, o.emoji,
         CASE WHEN uo.id IS NULL THEN 0 ELSE 1 END AS is_followed,
         CASE WHEN o.created_by_user_id = :creator_id THEN 1 ELSE 0 END AS can_manage
         FROM oshis o LEFT JOIN user_oshis uo ON uo.oshi_id = o.id AND uo.user_id = :user_id
@@ -52,8 +52,8 @@ function findOshiMembers(PDO $pdo, int $oshiId): array
 /** 推しマスタを保存する。トランザクションの開始・確定はserviceまたはCSV側が担当する。 */
 function insertOshi(PDO $pdo, array $input, int $creatorId): int
 {
-    $statement = $pdo->prepare('INSERT INTO oshis (name, oshi_type, emoji, theme_color, created_by_user_id)
-        VALUES (:name, :oshi_type, :emoji, :theme_color, :creator)');
+    $statement = $pdo->prepare('INSERT INTO oshis (name, oshi_type, emoji, created_by_user_id)
+        VALUES (:name, :oshi_type, :emoji, :creator)');
     $statement->execute($input + ['creator' => $creatorId]);
     return (int) $pdo->lastInsertId();
 }
@@ -94,6 +94,6 @@ function updateOshiRecord(PDO $pdo, int $oshiId, array $input): void
 {
     // 入力値はSQLへ連結せず、プリペアドステートメントで別に渡す。
     $statement = $pdo->prepare('UPDATE oshis SET name = :name, oshi_type = :oshi_type,
-        emoji = :emoji, theme_color = :theme_color WHERE id = :id');
+        emoji = :emoji WHERE id = :id');
     $statement->execute($input + ['id' => $oshiId]);
 }

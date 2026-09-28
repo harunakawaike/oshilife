@@ -21,7 +21,7 @@ require PROJECT_ROOT . '/includes/header.php';
 <div id="oshi-detail" data-oshi-id="<?= (int) $oshi['id'] ?>">
     <section class="oshi-detail-hero">
         <span class="detail-emoji" aria-hidden="true"><?= e($oshi['emoji']) ?></span>
-        <div><p class="eyebrow">MY OSHI NOTES</p><h1><?= e($oshi['name']) ?></h1><span class="tag lavender"><?= e(OSHI_TYPES[$oshi['oshi_type']]) ?></span><p class="caption">テーマカラー <span class="color-swatch" data-color="<?= e($oshi['theme_color']) ?>" aria-hidden="true"></span> <?= e($oshi['theme_color']) ?></p></div>
+        <div><p class="eyebrow">MY OSHI NOTES</p><h1><?= e($oshi['name']) ?></h1><span class="tag lavender"><?= e(OSHI_TYPES[$oshi['oshi_type']]) ?></span></div>
     </section>
     <div class="detail-follow"><button class="button secondary small" id="detail-follow" type="button" data-followed="<?= (int) $oshi['is_followed'] ?>"><?= $oshi['is_followed'] ? '自分の推しから解除' : '＋ 自分の推しに追加' ?></button><p class="caption">解除しても、共有されている推しやメンバー情報は残ります。</p></div>
     <p id="oshi-message" class="status-text" role="status" tabindex="-1"></p>
@@ -52,11 +52,6 @@ require PROJECT_ROOT . '/includes/header.php';
                     <p id="edit-emoji-help" class="caption">複数の絵文字・記号を使えます（32文字以内）。</p>
                     <p class="field-error" id="edit-error-emoji"></p>
                 </div>
-                <div>
-                    <label class="form-label" for="edit-color">テーマカラー（HEX）</label>
-                    <input id="edit-color" name="theme_color" value="<?= e($oshi['theme_color']) ?>" maxlength="7" required aria-describedby="edit-error-theme_color">
-                    <p class="field-error" id="edit-error-theme_color"></p>
-                </div>
             </div>
             <p id="edit-message" class="form-message" role="alert" tabindex="-1"></p>
             <div class="edit-actions">
@@ -75,7 +70,7 @@ require PROJECT_ROOT . '/includes/header.php';
                 <?php $members = findOshiMembers(database(), $id); ?>
                 <?php if (!$members): ?><p class="empty-state">メンバーはまだ登録されていません。</p><?php endif; ?>
                 <?php foreach ($members as $member): ?>
-                <article class="member-card"><span class="member-heart" aria-hidden="true"><?= e($member['heart_emoji']) ?></span><div><h3><?= e($member['name']) ?></h3><p><?= e($member['color_name']) ?> <span class="member-hex"><?= e($member['hex_color']) ?></span></p></div></article>
+                <article class="member-card"><span class="member-heart" aria-hidden="true"><?= e($member['heart_emoji']) ?></span><div><h3><?= e($member['name']) ?></h3><p><?= e($member['color_name']) ?></p></div></article>
                 <?php endforeach; ?>
             </div>
         </section>
@@ -84,11 +79,32 @@ require PROJECT_ROOT . '/includes/header.php';
             <p class="eyebrow">MEMBER COLORS</p><h2>メンバーを追加</h2><p class="caption">みんなで使う情報のため、追加できるのは推しの作成者です。</p>
             <form id="member-create" novalidate>
                 <label class="form-label" for="member-name">名前</label><input id="member-name" name="name" maxlength="100" required aria-describedby="member-error-name"><p class="field-error" id="member-error-name"></p>
-                <label class="form-label" for="member-color-name">カラー名</label><input id="member-color-name" name="color_name" placeholder="pink / ピンク" maxlength="40" required aria-describedby="member-error-color_name"><p class="field-error" id="member-error-color_name"></p>
-                <fieldset class="heart-fieldset"><legend>ハートカラー</legend><div class="heart-options">
-                    <?php foreach (MEMBER_HEARTS as $heart): ?><label><input type="radio" name="heart_emoji" value="<?= e($heart) ?>" <?= $heart === '🩷' ? 'checked' : '' ?> aria-label="<?= e($heart) ?>"><span><?= e($heart) ?></span></label><?php endforeach; ?>
-                </div><p class="field-error" id="member-error-heart_emoji"></p></fieldset>
-                <label class="form-label" for="member-hex">HEXカラー</label><input id="member-hex" name="hex_color" value="#E7A6C0" maxlength="7" pattern="#[0-9a-fA-F]{6}" required aria-describedby="member-error-hex_color"><p class="field-error" id="member-error-hex_color"></p>
+                <fieldset class="heart-fieldset" aria-describedby="member-color-help member-error-heart_emoji">
+                    <legend>メンバーカラー</legend>
+                    <p id="member-color-help" class="caption">ハートを選ぶだけで色が決まります。</p>
+                    <div class="heart-options">
+                        <?php foreach (MEMBER_COLOR_PRESETS as $heart => $preset): ?>
+                        <label>
+                            <input type="radio" name="heart_emoji" value="<?= e($heart) ?>" data-color-name="<?= e($preset['name']) ?>" data-color-value="<?= e($preset['color']) ?>" <?= $heart === '🩷' ? 'checked' : '' ?> aria-label="<?= e($preset['name']) ?>">
+                            <span aria-hidden="true"><?= e($heart) ?></span><small><?= e($preset['name']) ?></small>
+                        </label>
+                        <?php endforeach; ?>
+                    </div>
+                    <p class="field-error" id="member-error-heart_emoji"></p>
+                </fieldset>
+                <p id="member-color-status" class="caption" role="status">🩷 ピンクを選択中</p>
+                <details id="member-color-options" class="member-color-options">
+                    <summary>色を細かく調整する（任意）</summary>
+                    <label class="form-label" for="member-color">色味を選ぶ</label>
+                    <div class="member-color-picker">
+                        <input id="member-color" type="color" name="hex_color" value="#E7A6C0" aria-describedby="member-picker-help member-error-hex_color">
+                        <p id="member-picker-help" class="caption">色見本を押すと、好きな色を選べます。</p>
+                    </div>
+                    <p class="field-error" id="member-error-hex_color"></p>
+                    <label class="form-label" for="member-color-name">色の名前</label>
+                    <input id="member-color-name" name="color_name" value="ピンク" placeholder="例：さくらピンク" maxlength="40" required aria-describedby="member-error-color_name">
+                    <p class="field-error" id="member-error-color_name"></p>
+                </details>
                 <p id="member-message" class="form-message" role="alert" tabindex="-1"></p><button class="button primary" type="submit">メンバーを追加</button>
             </form>
         </section>

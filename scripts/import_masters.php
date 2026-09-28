@@ -57,11 +57,11 @@ function planMasterImport(PDO $pdo, array $oshiRows, array $memberRows, int $cre
         $key = mb_strtolower($input['name'], 'UTF-8') . ':' . $input['oshi_type'];
         if (isset($keys[$key])) throw new RuntimeException('CSV内の推しが重複しています: ' . $input['name']);
         $keys[$key] = true;
-        $statement = $pdo->prepare('SELECT id, name, oshi_type, emoji, theme_color, is_active, created_by_user_id FROM oshis WHERE name = :name AND oshi_type = :type');
+        $statement = $pdo->prepare('SELECT id, name, oshi_type, emoji, is_active, created_by_user_id FROM oshis WHERE name = :name AND oshi_type = :type');
         $statement->execute(['name' => $input['name'], 'type' => $input['oshi_type']]);
         $existing = $statement->fetch();
         if ($existing) {
-            if (!$existing['is_active'] || $existing['emoji'] !== $input['emoji'] || strtoupper($existing['theme_color']) !== $input['theme_color']) {
+            if (!$existing['is_active'] || $existing['emoji'] !== $input['emoji']) {
                 throw new RuntimeException('既存データと異なるため上書きしません: ' . $input['name']);
             }
             $skipped++;
@@ -118,7 +118,7 @@ try {
     if ($creatorId === null) throw new RuntimeException('使い方: php scripts/import_masters.php --creator-id=1 [--apply] [--oshis=path] [--members=path]');
     $pdo = database();
     if (!findUserById($pdo, $creatorId)) throw new RuntimeException('有効な作成者ユーザーIDを指定してください。');
-    $oshis = readMasterCsv($options['oshis'] ?? PROJECT_ROOT . '/database/seeds/oshis.csv', ['name', 'oshi_type', 'emoji', 'theme_color']);
+    $oshis = readMasterCsv($options['oshis'] ?? PROJECT_ROOT . '/database/seeds/oshis.csv', ['name', 'oshi_type', 'emoji']);
     $members = readMasterCsv($options['members'] ?? PROJECT_ROOT . '/database/seeds/members.csv', ['oshi_name', 'name', 'color_name', 'heart_emoji', 'hex_color']);
     $plan = planMasterImport($pdo, $oshis, $members, $creatorId);
     $apply = array_key_exists('apply', $options);

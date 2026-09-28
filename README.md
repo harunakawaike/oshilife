@@ -107,14 +107,14 @@ Phase 1：新規登録、ログイン、ログアウト、ログイン状態取�
 Phase 2：
 
 - 共有推し検索（名前の部分一致、1ページ50件）と登録済み表示
-- 推し新規作成と自分への自動登録、複数絵文字、推し種別、テーマカラー保存
+- 推し新規作成と自分への自動登録、複数絵文字、推し種別
 - 自分の推し一覧、確認ダイアログ付き解除、共有情報の維持
 - メンバー追加・一覧、11種類のハート選択、カラー名・HEX保存
 - ホームの選択肢をuser_oshisと連動。選択状態の表示まで実装
 - スマホ・タブレット・PCを同一HTMLとCSS media queryで切替
 - CSV取込の確認・明示実行の土台、日本語解説、HTTP統合テスト
 
-作成済みの共有マスターのメンバー追加は**そのマスター作成者だけ**に限定しました。他ユーザーは検索・閲覧・自分への登録/解除ができます。推しの名前・種別・絵文字・テーマカラーも作成者だけが詳細画面から編集できます。共同編集や無効化の管理画面は次Phaseで権限設計とともに追加します。
+作成済みの共有マスターのメンバー追加は**そのマスター作成者だけ**に限定しました。他ユーザーは検索・閲覧・自分への登録/解除ができます。推しの名前・種別・絵文字も作成者だけが詳細画面から編集できます。共同編集や無効化の管理画面は次Phaseで権限設計とともに追加します。
 
 ## レスポンシブ表示
 
@@ -281,7 +281,7 @@ users（ユーザー）
 - **JOIN**：別々の表をIDでつなぎ、一緒に読み取るSQL。名前・絵文字をユーザーごとにコピーする必要がなくなります。
 - **共有マスター**：皆が同じ情報を参照する元データ。今回のoshisとmembersが該当します。
 - **UNIQUE**：DBが重複を拒否するルール。同時に2回送信しても `user_id + oshi_id` が同じ登録はできません。
-- oshis：name + oshi_typeがUNIQUE。作成者、is_active、複数絵文字とHEXを保持。作成者ユーザーが削除されてもマスターは残します。
+- oshis：name + oshi_typeがUNIQUE。作成者、is_active、複数絵文字を保持。作成者ユーザーが削除されてもマスターは残します。
 - members：oshi_id + nameがUNIQUE。ハートは❤️ 🧡 💛 💚 🩵 💙 💜 🩷 🤍 🖤 🤎から選択。
 - user_oshis：本人と共有推しのIDのみを関連付け、registered_atを保持。
 - 全テーブルutf8mb4、InnoDB。既存users / user_settingsの定義は変更しません。
@@ -318,8 +318,8 @@ JSONで共有推し＋自分の登録状態
 | --- | --- | --- |
 | GET /api/oshis/list.php | page（任意） | oshis、page、has_more |
 | GET /api/oshis/search.php | q、page（任意） | oshis、page、has_more |
-| POST /api/oshis/create.php | name、oshi_type、emoji、theme_color | oshi（201） |
-| POST /api/oshis/update.php | oshi_id、name、oshi_type、emoji、theme_color | 更新後のoshi（作成者のみ） |
+| POST /api/oshis/create.php | name、oshi_type、emoji | oshi（201） |
+| POST /api/oshis/update.php | oshi_id、name、oshi_type、emoji | 更新後のoshi（作成者のみ） |
 | POST /api/oshis/follow.php | oshi_id | 空オブジェクト |
 | POST /api/oshis/unfollow.php | oshi_id | 空オブジェクト |
 | GET /api/oshis/my.php | なし | 本人のoshis |
@@ -334,7 +334,7 @@ JSONの封筒はPhase 1と同じsuccess/dataまたはsuccess/message/errorsで�
 `database/seeds/oshis.csv` と `members.csv` は正しいヘッダーだけを持つテンプレートです。実マスターの大量投入はしていません。
 
 ```csv
-name,oshi_type,emoji,theme_color
+name,oshi_type,emoji
 ```
 
 ```csv
@@ -397,7 +397,7 @@ python3 tests/phase2_smoke.py
 1. 指定URLを開き、ログイン画面とCSSを確認する。
 2. 新規登録 → ログイン → ホームへ移動する。
 3. マイページ → 推し管理 → 名前で検索する。
-4. 見つからなければ新規作成（例：絵文字👑🐃、HEX #986879）。
+4. 見つからなければ新規作成（例：絵文字👑🐃）。
 5. 詳細でメンバーを追加し、🩷や🖤の選択状態と一覧を確認する。
 6. ホームの推し切替に作成した推しが出ることを確認する。
 7. 登録解除の確認でキャンセル/実行を試し、検索結果には共有推しが残ることを確認する。
@@ -422,10 +422,20 @@ python3 tests/phase2_smoke.py
 
 ## 登録した推し情報の編集
 
-マイページ → 推し管理 → 詳細を見る → **推し情報を編集** → **変更を保存**で、名前・種別・絵文字・テーマカラーを変更できます。現在の内容が入力済みで表示され、キャンセルすると元の値へ戻ります。
+マイページ → 推し管理 → 詳細を見る → **推し情報を編集** → **変更を保存**で、名前・種別・絵文字を変更できます。現在の内容が入力済みで表示され、キャンセルすると元の値へ戻ります。
 
 共有マスターなので、変更はその推しを登録している他のユーザーの一覧・検索・ホームにも次回取得時に反映されます。推しのIDを維持するため、登録関係やメンバー情報は残ります。編集は作成者本人だけが行えます。
 
 処理は `oshi_detail.php → oshis.js → api/oshis/update.php → 入力検証 → oshi_service.phpで作成者確認 → oshi_repository.phpでUPDATE → 詳細を再表示` の順です。POST/CSRF、ログイン確認、PDOプリペアドステートメントを使い、重複名・種別は409として変更を取り消します。新しいDBテーブルやmigrationは不要です。
 
 編集APIと権限・重複・無効化・既存関連の保持を含め、HTTP109件を確認しました。実ブラウザーの操作確認は未実施です。
+
+## 推しテーマカラーの廃止
+
+推し本体は名前・種別・絵文字だけを登録・編集します。新規登録、編集、詳細表示、API、推しCSVからテーマカラーを外しました。メンバーのカラー名・ハート・HEXは継続して使用します。既存データを削除しないため、DBのoshis.theme_colorは旧仕様との互換用に残していますが、アプリは読み書きしません。DB変更の実行は不要です。
+
+## メンバーカラーの選び方
+
+メンバー追加では、色名付きのハートを選ぶだけで登録できます。色名と保存用の色コードは自動で設定されるため、HEXを入力する必要はありません。「色を細かく調整する（任意）」を開けば、色見本から好きな色を選び、色名も変更できます。メンバー一覧はハートと色名を表示します。
+
+実装では `oshi_validator.php` の `MEMBER_COLOR_PRESETS` をHTMLのdata属性へ渡し、`oshis.js` の `selectMemberColor()` が選択されたハートに合わせて入力値を更新します。DB/APIでは引き続きhex_colorを内部の保存形式として利用し、既存データの変換やDB変更は不要です。

@@ -184,10 +184,27 @@ async function loadMembers(id) {
     data.members.forEach((member) => {
         const card = textElement('article', 'member-card');
         const text = textElement('div', '');
-        text.append(textElement('h3', '', member.name), textElement('p', '', `${member.color_name}  ${member.hex_color}`));
+        text.append(textElement('h3', '', member.name), textElement('p', '', member.color_name));
         card.append(textElement('span', 'member-heart', member.heart_emoji), text);
         list.append(card);
     });
+}
+
+/** 選んだハートの色名と色見本を揃え、コード入力なしで保存できるようにする。 */
+function selectMemberColor() {
+    const selected = document.querySelector('#member-create input[name="heart_emoji"]:checked');
+    if (!selected) return;
+    document.getElementById('member-color-name').value = selected.dataset.colorName;
+    document.getElementById('member-color').value = selected.dataset.colorValue;
+    document.getElementById('member-color-status').textContent = `${selected.value} ${selected.dataset.colorName}を選択中`;
+}
+
+/** エラーの入力欄が折りたたまれている場合も、開いてからフォーカスできるようにする。 */
+function focusMemberError(form, message) {
+    const invalid = form.querySelector('[aria-invalid]');
+    const details = invalid?.closest('details');
+    if (details) details.open = true;
+    (invalid || message).focus();
 }
 
 /** ハート選択も含めて保存し、一覧へ即座に反映する。 */
@@ -204,12 +221,14 @@ async function handleMemberCreate(event) {
         const input = Object.fromEntries(new FormData(form));
         await apiRequest('api/oshis/members/create.php', 'POST', { ...input, oshi_id: id });
         form.reset();
+        selectMemberColor();
+        document.getElementById('member-color-options').open = false;
         await loadMembers(id);
         message.textContent = 'メンバーを追加しました。';
     } catch (error) {
         showOshiFormErrors(form, 'member', error);
         message.textContent = error.message;
-        (form.querySelector('[aria-invalid]') || message).focus();
+        focusMemberError(form, message);
     } finally {
         button.disabled = false;
     }
@@ -260,11 +279,17 @@ function initializeOshiPage() {
     }
     document.getElementById('oshi-edit')?.addEventListener('submit', handleOshiEdit);
     document.getElementById('oshi-edit-cancel')?.addEventListener('click', cancelOshiEdit);
-    document.getElementById('member-create')?.addEventListener('submit', handleMemberCreate);
+    const memberForm = document.getElementById('member-create');
+    if (memberForm) {
+        memberForm.addEventListener('submit', handleMemberCreate);
+        memberForm.querySelectorAll('input[name="heart_emoji"]').forEach((radio) => {
+            radio.addEventListener('change', selectMemberColor);
+        });
+        document.getElementById('member-color').addEventListener('input', () => {
+            document.getElementById('member-color-status').textContent = '選んだハートの色味を調整しました。';
+        });
+        selectMemberColor();
+    }
     document.getElementById('detail-follow')?.addEventListener('click', handleDetailFollow);
-    document.querySelectorAll('[data-color]').forEach((element) => {
-        // 指定プロパティと色形式を限定して、任意のCSSを注入させない。
-        if (/^#[0-9a-f]{6}$/i.test(element.dataset.color)) element.style.backgroundColor = element.dataset.color;
-    });
 }
 initializeOshiPage();

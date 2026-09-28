@@ -1,5 +1,5 @@
 <?php
-/** update.php の役割：作成者本人が推しの名前・種別・絵文字・テーマカラーを編集するJSON API。 */
+/** update.php の役割：作成者本人が推しの名前・種別・絵文字を編集するJSON API。 */
 declare(strict_types=1);
 require_once __DIR__ . '/../../app/helpers/oshi_api.php';
 $user = startOshiApi('POST');

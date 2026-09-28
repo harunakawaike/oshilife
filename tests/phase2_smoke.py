@@ -138,11 +138,11 @@ try:
     a.call('api/oshis/list.php?page=0', status=422)
     a.call('api/oshis/detail.php?id=999999999', status=404)
     oshi_name = f'QA-{key} <script>x</script>'
-    oshi_input = {'name': oshi_name, 'oshi_type': 'group', 'emoji': '👑🐃💎', 'theme_color': '#bbaacc', 'created_by_user_id': b_id}
+    oshi_input = {'name': oshi_name, 'oshi_type': 'group', 'emoji': '👑🐃💎', 'created_by_user_id': b_id}
     created = a.call('api/oshis/create.php', 'POST', oshi_input, status=201)['data']['oshi']
     oshi_id = created['id']
     assert int(created['can_manage']) == 1 and int(created['is_followed']) == 1
-    assert created['emoji'] == '👑🐃💎' and created['theme_color'] == '#BBAACC'
+    assert created['emoji'] == '👑🐃💎' and 'theme_color' not in created
     a.call('api/oshis/create.php', 'POST', oshi_input, status=409)
     a.call('api/oshis/follow.php', 'POST', {'oshi_id': oshi_id}, status=409)
     detail = b.call(f'api/oshis/detail.php?id={oshi_id}')['data']['oshi']
@@ -179,18 +179,19 @@ try:
     response, owner_html = a.call(f'oshi_detail.php?id={oshi_id}')
     response, other_html = b.call(f'oshi_detail.php?id={oshi_id}')
     assert 'id="oshi-edit"' in owner_html and 'id="oshi-edit"' not in other_html
-    edit = {'oshi_id': oshi_id, 'name': f'更新-{key} <b>推し</b>', 'oshi_type': 'solo', 'emoji': '💎🩷', 'theme_color': '#123abc'}
+    assert 'theme_color' not in owner_html and 'テーマカラー' not in owner_html
+    edit = {'oshi_id': oshi_id, 'name': f'更新-{key} <b>推し</b>', 'oshi_type': 'solo', 'emoji': '💎🩷'}
     anonymous.call('api/oshis/update.php', 'POST', edit, status=401)
     a.call('api/oshis/update.php', status=405)
     a.call('api/oshis/update.php', 'POST', edit, status=419, token=False)
     b.call('api/oshis/update.php', 'POST', {**edit, 'user_id': a_id, 'created_by_user_id': b_id}, status=403)
     a.call('api/oshis/update.php', 'POST', {**edit, 'oshi_id': []}, status=422)
-    a.call('api/oshis/update.php', 'POST', {**edit, 'name': '', 'oshi_type': 'invalid', 'theme_color': 'red'}, status=422)
+    a.call('api/oshis/update.php', 'POST', {**edit, 'name': '', 'oshi_type': 'invalid'}, status=422)
     a.call('api/oshis/update.php', 'POST', {**edit, 'oshi_id': 999999999}, status=404)
     assert a.call(f'api/oshis/detail.php?id={oshi_id}')['data']['oshi']['name'] == oshi_name
     updated = a.call('api/oshis/update.php', 'POST', {**edit, 'created_by_user_id': b_id})['data']['oshi']
     assert updated['name'] == edit['name'] and updated['emoji'] == edit['emoji']
-    assert updated['oshi_type'] == 'solo' and updated['theme_color'] == '#123ABC'
+    assert updated['oshi_type'] == 'solo' and 'theme_color' not in updated
     assert int(updated['id']) == int(oshi_id) and int(updated['can_manage']) == 1 and int(updated['is_followed']) == 1
     assert b.call(f'api/oshis/detail.php?id={oshi_id}')['data']['oshi']['name'] == edit['name']
     assert len(a.call(f'api/oshis/members.php?id={oshi_id}')['data']['members']) == 1

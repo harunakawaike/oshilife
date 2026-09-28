@@ -33,6 +33,7 @@ CREATE TABLE oshis (
     name VARCHAR(100) NOT NULL,
     oshi_type ENUM('group','solo','actor','other') NOT NULL,
     emoji VARCHAR(32) NOT NULL,
+    -- 旧仕様との互換用。推しテーマカラーは廃止済みで、画面・API・CSVから使用しない。
     theme_color VARCHAR(7) NOT NULL DEFAULT '#986879',
     created_by_user_id BIGINT UNSIGNED NULL,
     is_active TINYINT(1) NOT NULL DEFAULT 1,
