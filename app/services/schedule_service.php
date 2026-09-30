@@ -86,6 +86,7 @@ function saveSchedule(int $userId, array $input, ?int $id, bool $allowDuplicate)
     $pdo->beginTransaction();
     try {
         $existing = $id === null ? null : requireScheduleOwner(lockSchedule($pdo, $id), $userId);
+        if ($id !== null) requireUnlinkedSchedule($pdo, $id);
         checkScheduleRelations($pdo, $userId, $input, $existing);
         if ($id === null && !$allowDuplicate) {
             $duplicates = findScheduleDuplicates($pdo, $userId, $input);
@@ -103,6 +104,7 @@ function deleteSchedule(int $userId, int $id): void
     $pdo = database(); $pdo->beginTransaction();
     try {
         requireScheduleOwner(lockSchedule($pdo, $id), $userId);
+        requireUnlinkedSchedule($pdo, $id);
         scheduleQuery($pdo, "UPDATE schedules SET status='deleted',updated_at=CURRENT_TIMESTAMP WHERE id=:id", ['id' => $id]);
         $pdo->commit();
     } catch (Throwable $exception) { $pdo->rollBack(); throw $exception; }
@@ -142,4 +144,12 @@ function customizeSchedule(int $userId, int $id, array $input): void
         $statement->execute($input + ['id' => $link['id']]);
         $pdo->commit();
     } catch (Throwable $exception) { $pdo->rollBack(); throw $exception; }
+}
+
+/** 連携公演の公開範囲や開催状態が食い違わないよう、共有元の変更はライブ管理へ集約する。 */
+function requireUnlinkedSchedule(PDO $pdo, int $id): void
+{
+    if (scheduleQuery($pdo,'SELECT id FROM live_events WHERE schedule_id=:id',['id'=>$id])->fetch()) {
+        throw new ScheduleOperationException('この予定はライブ管理から編集・中止にしてください。',409);
+    }
 }

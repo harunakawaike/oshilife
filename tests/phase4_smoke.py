@@ -80,7 +80,7 @@ def db(mode):
         $pdo->beginTransaction();
         try {
             foreach($ids as $id) {
-                foreach(['correction_requests','reactions'] as $table) {
+                foreach(['correction_requests','reactions','notifications'] as $table) {
                     $s=$pdo->prepare('DELETE child FROM '.$table.' child JOIN schedules s ON s.id=child.schedule_id WHERE s.created_by_user_id=?'); $s->execute([$id]);
                 }
                 $s=$pdo->prepare('DELETE FROM user_schedules WHERE user_id=?');$s->execute([$id]);
@@ -107,7 +107,7 @@ def db(mode):
         $s=$pdo->prepare("UPDATE reactions SET created_at=CASE WHEN reaction_type='helped' THEN '2025-12-31 23:59:59' ELSE '2026-01-01 00:00:00' END WHERE schedule_id=?");$s->execute([$sid]);
     }
     $result=[];
-    foreach(['users','user_settings','oshis','members','user_oshis','schedules','schedule_members','schedule_sources','user_schedules','correction_requests','reactions'] as $table) {
+    foreach(['users','user_settings','oshis','members','user_oshis','schedules','schedule_members','schedule_sources','user_schedules','correction_requests','reactions','notifications'] as $table) {
         $rows=$pdo->query('SELECT * FROM '.$table.' ORDER BY id')->fetchAll();
         $result[$table]=['count'=>count($rows),'hash'=>hash('sha256',serialize($rows))];
     }
@@ -149,6 +149,21 @@ try:
     propose(a,sid,'start_time','20:00',403)
     rid=propose(b,sid,'start_time','20:00',old_value='嘘の値',requested_by_user_id=cid)['correction_id']
     assert detail(b,sid)['start_time']=='19:00'
+    notices=get(a,'notifications/list')
+    assert notices['unread_count']==1 and len(notices['popups'])==1
+    nid=notices['notifications'][0]['id']
+    assert notices['notifications'][0]['kind']=='correction'
+    assert get(b,'notifications/list')['notifications']==[]
+    call(b,'notifications/read','POST',{'ids':[nid],'mode':'read'})
+    assert get(a,'notifications/list')['unread_count']==1
+    a.call('api/notifications/read.php','POST',{'ids':[nid]},status=419,token=False)
+    call(a,'notifications/read','POST',{'ids':[nid],'mode':'shown'})
+    assert get(a,'notifications/list')['popups']==[]
+    assert get(a,'notifications/list')['unread_count']==1
+    call(a,'notifications/read','POST',{'ids':[nid]})
+    assert get(a,'notifications/list')['unread_count']==0
+    call(a,'notifications/read','POST',{'ids':[]},422)
+    anonymous.call('api/notifications/list.php',status=401)
     propose(c,sid,'start_time','20:00',409)
     mine=get(a,'schedules/corrections/list')['corrections']
     assert len(mine)==1 and mine[0]['old_value']=='19:00' and mine[0]['new_value']=='20:00'
@@ -185,8 +200,17 @@ try:
     b.call(f'api/schedules/stats.php?schedule_id={private}',status=404)
     toggle(a,sid,'helped',403);toggle(b,sid,'like',422)
     first=toggle(b,sid,'helped');assert first['active'] and first['count']==1
+    helped_notices=[n for n in get(a,'notifications/list')['notifications'] if n['kind']=='helped']
+    assert len(helped_notices)==1
+    helped_notice_id=helped_notices[0]['id']
+    call(a,'notifications/read','POST',{'ids':[helped_notice_id],'mode':'shown'})
     second=toggle(b,sid,'helped');assert not second['active'] and second['count']==0
+    assert not [n for n in get(a,'notifications/list')['notifications'] if n['kind']=='helped']
     toggle(b,sid,'helped'); toggle(b,sid,'thanks')
+    notices=get(a,'notifications/list')
+    assert len([n for n in notices['notifications'] if n['kind']=='helped'])==1
+    assert helped_notice_id not in [n['id'] for n in notices['popups']]
+    assert any(n['kind']=='thanks' for n in notices['notifications'])
     both=get(b,'schedules/reactions/status',schedule_id=sid)['reactions']
     assert both['helped']['active'] and both['thanks']['active']
     assert not get(c,'schedules/reactions/status',schedule_id=sid)['reactions']['helped']['active']
@@ -230,4 +254,4 @@ try:
     propose(b,sid,'note','削除予定への提案',404)
 finally:
     assert db('cleanup')==before, '既存データの内容が変化しています。'
-print(f'Phase 4: {checks} HTTP checks passed; all 11 existing table snapshots unchanged.')
+print(f'Phase 4: {checks} HTTP checks passed; all 12 existing table snapshots unchanged.')

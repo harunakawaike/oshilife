@@ -30,3 +30,28 @@
 .thanks-summary strong { font-size: 18px; }
 .thanks-summary a { font-size: 12px; margin-top: 8px; }
 @media (min-width:768px) { .correction-comparison { grid-template-columns: repeat(2,minmax(0,1fr)); } .feedback-form { max-width: 680px; } }
+
+/* ホームの感謝カード：長い説明文を数値3つと短い補足にまとめる。 */
+.two-cards .thanks { container-type: inline-size; padding: 20px; }
+.thanks-summary { gap: 16px; }
+.thanks-period { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; }
+.thanks-period-label { font-size: 10px; padding: 3px 7px; border-radius: 20px; border: 1px solid var(--border); }
+.thanks-metrics { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; margin: 0; }
+.thanks-metric { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 2px; min-width: 0; text-align: center; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+.thanks-metric-icon { font-size: 21px; color: var(--accent-text); line-height: 1; }
+.thanks-metric-label { font-size: 9px; line-height: 1.5; order: 3; }
+.thanks-metric-value { font-size: 27px; font-variant-numeric: tabular-nums; font-weight: 600; line-height: 1.1; margin: 0; overflow-wrap: anywhere; }
+.thanks-metric-value small { font-size: 9px; margin-left: 3px; font-weight: 400; }
+.two-cards .thanks .thanks-note { font-size: 10px; line-height: 1.7; margin: 0; }
+.two-cards .thanks > .text-button { display: block; border-top: 1px solid var(--border); padding-top: 13px; margin-top: 16px; font-size: 11px; }
+.two-cards .thanks > .small-icon { display: none; }
+.two-cards .thanks > h2 { margin: 0 0 14px; font-size: 13px; }
+@container (max-width:220px) {
+    .thanks-metrics { gap: 3px; }
+    .thanks-metric-value { font-size: 22px; }
+    .thanks-metric-label { font-size: 8px; }
+    .thanks-period-label { display: none; }
+}
+@media (min-width:768px) and (max-width:1199px) {
+    .dashboard-grid > .two-cards { grid-template-columns: 1fr; }
+}

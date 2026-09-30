@@ -1,0 +1,18 @@
+/* ライブ・当落・遠征の画面。利用者が選んだテーマ変数を使い、狭い画面は一列にする。 */
+.live-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin:20px 0}
+.live-field{display:flex;flex-direction:column;gap:8px;min-width:0;font-weight:600}
+.live-field input,.live-field select,.live-field textarea{width:100%;min-width:0;box-sizing:border-box;font:inherit;padding:12px;border:1px solid var(--border,#ccc);border-radius:12px;background:var(--surface,#fff);color:var(--ink)}
+.live-wide{grid-column:1/-1}.live-section{margin:24px 0}.live-section h1{font-size:clamp(1.6rem,4vw,2.4rem)}
+.live-section small{font-size:.75rem;font-weight:400}.live-actions,.live-time{display:flex;gap:16px;flex-wrap:wrap;align-items:center}.live-actions{margin-top:16px}
+.live-time span{padding:10px 0}.live-note{white-space:pre-wrap;overflow-wrap:anywhere}.live-date{font-size:1.15rem;font-weight:600}
+.live-state{display:inline-block;padding:4px 12px;border-radius:20px;background:var(--pink);font-size:.85rem}
+.state-cancelled,.state-postponed{font-weight:700;border:2px solid currentColor}.state-cancelled::before{content:'中止 · ';display:none}
+.live-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.live-grid .live-section{margin:0}.live-countdown{display:block;font-size:2rem;margin:16px 0}
+.travel-list{display:grid;gap:16px}.travel-card{padding:20px 0;border-bottom:1px solid var(--border,#ddd);overflow-wrap:anywhere}
+.todo-row{display:flex;gap:20px;align-items:center;padding:16px 0;border-bottom:1px solid var(--border,#ddd)}.todo-check{display:flex;gap:8px;white-space:nowrap;align-items:center}.todo-check input{width:20px;height:20px;accent-color:var(--accent-text)}
+.todo-edit{display:grid;grid-template-columns:minmax(0,2fr) minmax(120px,1fr);gap:12px;flex:1;min-width:0}.todo-edit .live-actions,.todo-edit .live-message{grid-column:1/-1;margin:0}
+.live-message{overflow-wrap:anywhere}.live-duplicates{display:grid;gap:14px}.live-section details{margin-top:20px}.live-section summary{cursor:pointer;padding:12px 0;font-weight:600}#home-next-live .card{margin:0;border:0;box-shadow:none;padding:0;background:transparent}
+@media(max-width:640px){.live-fields,.live-grid{grid-template-columns:1fr}.todo-row{align-items:flex-start;flex-direction:column}.todo-edit{width:100%;grid-template-columns:1fr}.live-actions .button{max-width:100%}.live-section .section-heading{flex-wrap:wrap;gap:14px}}
+[hidden]{display:none!important}
+
+.live-section p,.live-grid .card p{font-size:.9rem}.live-section .live-date{font-size:1.1rem}.page-heading{flex-wrap:wrap;gap:16px}.live-grid .card{overflow-wrap:anywhere}

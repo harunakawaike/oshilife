@@ -10,6 +10,7 @@ function scheduleJoins(): string
     return ' FROM schedules s JOIN oshis o ON o.id=s.oshi_id
         JOIN users author ON author.id=s.created_by_user_id
         CROSS JOIN (SELECT :viewer AS id) viewer
+        LEFT JOIN live_events linked_live ON linked_live.schedule_id=s.id
         LEFT JOIN user_schedules us ON us.schedule_id=s.id AND us.user_id=viewer.id ';
 }
 
@@ -78,6 +79,7 @@ function hydrateSchedules(PDO $pdo, array $rows, int $userId): array
             ];
         }
         $result[] = $effective + [
+            'live_event_id' => $row['live_event_id'] === null ? null : (int) $row['live_event_id'], 'live_status' => $row['live_status'],
             'id' => (int) $row['id'], 'oshi_id' => (int) $row['oshi_id'], 'oshi_name' => $row['oshi_name'],
             'oshi_emoji' => $row['oshi_emoji'], 'category' => $row['category'],
             'category_label' => SCHEDULE_CATEGORIES[$row['category']] ?? 'その他',
@@ -98,7 +100,7 @@ function hydrateSchedules(PDO $pdo, array $rows, int $userId): array
 /** 絞り込み後の行だけを取得する。同期中の予定内容はコピーせず常にschedulesを参照する。 */
 function selectSchedules(PDO $pdo, int $userId, string $where, array $parameters = [], string $order = 's.schedule_date,s.start_time,s.id', ?int $limit = null, int $offset = 0): array
 {
-    $sql = 'SELECT s.*, o.name AS oshi_name, o.emoji AS oshi_emoji, author.display_name AS creator_name,
+    $sql = 'SELECT s.*, linked_live.id AS live_event_id, linked_live.status AS live_status, o.name AS oshi_name, o.emoji AS oshi_emoji, author.display_name AS creator_name,
         us.id AS link_id, us.sync_enabled, us.custom_title, us.custom_date, us.custom_start_time,
         us.custom_end_time, us.custom_is_all_day, us.custom_note ' . scheduleJoins() . ' WHERE ' . $where . ' ORDER BY ' . $order;
     if ($limit !== null) {

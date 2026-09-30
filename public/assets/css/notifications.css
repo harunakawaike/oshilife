@@ -1,0 +1,28 @@
+/* notifications.css の役割：通知をナビと重ならない位置に表示し、本人の配色をそのまま使う。 */
+.notification-control { position: relative; flex-shrink: 0; }
+.notification-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 7px 11px; border: 1px solid var(--border); border-radius: 22px; background: var(--surface); color: var(--ink); font-size: 12px; }
+.notification-badge { min-width: 20px; padding: 1px 5px; border-radius: 12px; background: var(--accent); color: var(--on-accent); font-size: 10px; }
+.notification-panel { position: fixed; z-index: 40; top: 78px; right: 16px; width: min(390px,calc(100vw - 32px)); max-height: min(620px,calc(100dvh - 180px)); overflow-y: auto; overscroll-behavior: contain; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-radius: 18px; box-shadow: 0 12px 40px #00000022; padding: 18px; }
+.notification-panel-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.notification-panel-header h2 { margin: 0; font-size: 16px; }
+.notification-close { flex-shrink: 0; border: 0; background: transparent; color: var(--ink); font-size: 22px; min-width: 36px; min-height: 36px; }
+.notification-link { display: grid; gap: 5px; padding: 14px 8px; color: var(--ink); overflow-wrap: anywhere; border-bottom: 1px solid var(--border); }
+.notification-link strong { font-size: 12px; font-weight: 500; }
+.notification-link.unread strong { font-weight: 650; }
+.notification-link.unread strong::before { content: '• '; color: var(--accent-text); }
+.notification-link small { color: var(--muted); font-size: 10px; }
+.notification-title { font-size: 12px; }
+.notification-toasts { position: fixed; z-index: 35; right: 16px; top: 96px; width: min(360px,calc(100vw - 32px)); display: grid; gap: 10px; pointer-events: none; }
+.notification-toast { display: flex; align-items: flex-start; background: var(--surface); color: var(--ink); border: 1px solid var(--border); border-left: 4px solid var(--accent); border-radius: 15px; box-shadow: 0 8px 30px #00000022; padding: 8px; pointer-events: auto; }
+.notification-toast .notification-link { flex: 1; min-width: 0; border: 0; padding: 8px; }
+.app-layout .app-header .header-note { display: none; }
+@media (min-width:1200px) {
+    .notification-control { order: 3; margin-left: 8px; }
+    .app-header .bottom-nav { margin-left: auto; }
+    .notification-panel { position: absolute; top: 54px; right: 0; }
+    .notification-toasts { top: 108px; right: 24px; }
+}
+@media (prefers-reduced-motion:no-preference) {
+    .notification-toast { animation: notice-appear .18s ease-out; }
+    @keyframes notice-appear { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+}

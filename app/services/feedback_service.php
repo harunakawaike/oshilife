@@ -32,6 +32,11 @@ function validateCorrectionValue(array $schedule, string $field, mixed $value): 
     $candidate[$field] = $value ?? '';
     [$normalized, $errors] = validateScheduleInput($candidate);
     if ($errors) throw new ScheduleOperationException(implode(' ', $errors), 422);
+    // ライブの日時は同じ予定を参照する。カテゴリ固定と開場順序も承認直前に再確認する。
+    $live = scheduleQuery(database(), 'SELECT open_time FROM live_events WHERE schedule_id=:id', ['id'=>$schedule['id']])->fetch();
+    if ($live && ($normalized['category'] !== 'live' || ($live['open_time'] !== null && $normalized['start_time'] !== null && substr($live['open_time'],0,5) > $normalized['start_time']))) {
+        throw new ScheduleOperationException('ライブのカテゴリと開場・開演の順序を確認してください。',422);
+    }
     return $normalized[$field];
 }
 

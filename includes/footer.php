@@ -3,5 +3,8 @@
 ?>
 </main>
 </div>
+<?php if (!($isAuthPage ?? false)): ?>
+<div id="notification-toasts" class="notification-toasts" aria-live="polite" aria-relevant="additions"></div>
+<?php endif; ?>
 </body>
 </html>

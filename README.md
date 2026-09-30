@@ -1,4 +1,4 @@
-# Oshilife v2 — Phase 4
+# Oshilife v2 — Phase 5
 
 推し活の予定・ライブ・遠征・お金を、自分の推しを中心にまとめるWebアプリです。
 Phase 1の認証基盤に、Phase 2の推し検索・新規作成・編集・自分への登録/解除・メンバーとハートカラー・ホーム推し切替・レスポンシブ対応を追加しました。
@@ -6,6 +6,8 @@ Phase 1の認証基盤に、Phase 2の推し検索・新規作成・編集・自
 Phase 3では予定の公開・非公開登録、月間カレンダー、他ユーザーの予定取り込み、自動同期と自分用編集を追加しました。詳細なファイル一覧・API・DB制約・学習解説・A/B確認手順は [Phase 3実装ガイド](docs/PHASE3.md) を参照してください。
 
 Phase 4では修正提案・投稿者の承認／却下・感謝のリアクション・共有状況・当月集計を追加しました。[Phase 4実装ガイド](docs/PHASE4.md) に全ファイル、API、DB制約、確認手順をまとめています。
+
+Phase 5ではライブ公演の共有、本人の申込・当落、当選後TODO、交通・ホテルをまとめた遠征管理、ホームの次のライブを追加しました。[Phase 5実装ガイド](docs/PHASE5.md) にファイル一覧、API、DB、学習解説、検証結果、ブラウザでの確認手順をまとめています。
 
 ## 今すぐ開く
 
@@ -603,3 +605,90 @@ reactionsのUNIQUE制約は同じ予定・本人・種類の二重登録を防�
 情報元は共通の種類名と「元情報を見る」リンクで表示し、登録件数・更新日時・確認待ち提案の有無を添えます。未承認の内容や根拠のない信頼度スコアは正式情報として扱いません。
 
 [Phase 4ガイドの確認手順](docs/PHASE4.md#ブラウザで確認する手順) でA/B/Cを切り替えて確認できます。APIとDOMモデルの検証は合格済みですが、実ブラウザでの描画・操作確認は残っています。
+
+## 受信通知とホームのミニダッシュボード
+
+「助かった！」「ありがとう！」「修正提案」を受け取ると、ログイン中の画面右上に通知ポップアップが出ます。アプリを表示している間は約20秒ごとに確認し、背景タブでは停止、戻ったときに再確認します。アプリを閉じている間のOSプッシュ通知ではありません。ログインして開き直したときにも未表示分を確認できます。
+
+ポップアップは最大3件、12秒後に消えますが、ヘッダーの「通知」に未読として残ります。通知を押して詳細／修正提案一覧を開くか、「表示中の通知を既読にする」で既読になります。本人の表示済み・既読はDBへ保存され、ページ移動後にも引き継ぎます。最新30件を一覧表示します。同じ人・予定・種類のリアクションを押し直しても通知行を増やさず、解除された感謝は一覧・未読件数から除外します。
+
+ホームの「最近のありがとう」は、月表示と、カレンダー追加／助かった！／ありがとう！の3つの数値を並べたダッシュボードです。0件も同じ位置に数字で表示し、長い説明は短い一言へまとめました。推し切替と本人の配色に引き続き連動します。
+
+| ファイル | 役割 |
+| --- | --- |
+| database/migrations/005_notifications.sql | 通知テーブル・未読INDEX・イベントのUNIQUE。既存の感謝と確認待ち提案も移行済み |
+| app/repositories/notification_repository.php | 通知生成、本人限定の一覧、表示済み・既読、解除済み感謝の除外 |
+| app/services/feedback_service.php | 提案・感謝の保存と同じトランザクションで通知を保存 |
+| api/notifications/list.php・read.php | GETで一覧・未読・未表示、CSRF付きPOSTで本人の表示済み・既読を更新 |
+| public/api/notifications/ | 上記APIの公開入口 |
+| includes/notifications.php・header.php・footer.php | 共通の通知ボタン・一覧・ポップアップ領域をログイン画面へ配置 |
+| public/assets/js/notifications.js | 定期確認・ポップアップ・一覧・既読操作 |
+| public/assets/css/notifications.css | スマホ／PCと本人の配色に合わせた通知表示 |
+| public/assets/js/monthly_summary.js・css/feedback.css | ホームの数値ダッシュボード |
+
+```text
+他ユーザーの感謝・修正提案
+  → 既存データとnotificationsをまとめて保存
+  → 受信者の画面が通知APIを定期確認
+  → ポップアップ表示 → shown_atを保存（未読は残す）
+  → 通知リンクを開く／既読ボタン → read_atを保存
+```
+
+通知先や本人IDはサーバー側で決めます。タイトルはHTMLとして実行させず文字として表示します。既読POSTも必ず通知先本人を条件にするため、他の人の通知IDを送っても更新できません。既存の感謝・提案・ユーザー設定は消していません。
+
+2026-09-30：通知を含む190件のHTTP検証に合格し、既存12テーブルの内容がテスト前後で一致。一時データは清掃済み。DOMモデルで3数値の表示、ポップアップ、表示済みと既読の分離、同画面での再表示防止、文字列表示を確認しました。実ブラウザでの見た目の検証は未実施です。
+
+## Phase 5：主要ファイルの役割
+
+| ファイル / ディレクトリ | 役割 |
+| --- | --- |
+| `public/live.php` / `live_form.php` / `live_detail.php` | 公演の検索・共有登録・本人の当落と準備 |
+| `public/trip_detail.php` / `travel_form.php` | 本人の遠征まとめ、複数の交通・宿泊の入力 |
+| `public/home.php` | 直近の管理中ライブ・残り日数・未完了TODO |
+| `public/assets/js/lives.js` | API送信、重複確認、TODO操作、検索、ホームの推し切替 |
+| `public/assets/css/lives.css` | 本人のテーマ色を使ったPC・スマホ向け配置 |
+| `config/lives.php` | 状態の日本語表示と近場6項目／遠征8項目のTODOテンプレート |
+| `app/helpers/live_view.php` | 認証済み画面の共通入力欄・TODO表示 |
+| `app/helpers/live_api.php` | 共通の認証・CSRF・API振り分け |
+| `app/validators/live_validator.php` | 必須入力・日付順序・金額・URLの検証 |
+| `app/services/live_service.php` | 共有公演、本人状況、TODO、遠征の保存手順 |
+| `app/repositories/live_repository.php` | 共有公演と本人限定データのSQL取得 |
+| `api/lives/` / `api/trips/` / `api/venues/` | ライブ・個人管理・TODO・遠征・交通・宿泊・会場のAPI |
+| `public/api/` 内の同名入口 | ブラウザからAPIへアクセスする公開URL |
+| `database/migrations/006_live_management.sql` | 既存DBを維持して7テーブルを追加（この環境は適用済み） |
+| `tests/phase5_smoke.py` / `tests/lives_ui.mjs` | 3ユーザーのHTTP・DB検証とJavaScript操作検証 |
+
+## Phase 5：処理の流れ
+
+```text
+共有公演の登録
+live_form.php → lives.js → api/lives/create.php
+  → 認証・CSRF → 入力検証・重複候補確認
+  → schedulesへ公演の日時・タイトルを保存
+  → live_eventsがschedule_idを参照 → JSON応答 → 詳細へ
+
+自分の当落
+live_detail.php → lives.js → api/lives/status/update.php
+  → セッションから本人ID取得 → user_live_statusへ保存
+  → 当選＋近場なら6項目、当選＋遠征なら8項目のTODO
+  → 固定のtemplate_keyで不足分だけ追加 → 画面へ
+
+遠征
+本人の当落で遠征を選択 → tripsを1人1公演1件作成
+  → 交通transportations／ホテルaccommodationsを複数登録
+  → trip_detail.phpで公演・交通・ホテル・TODO・会場を確認
+
+ホーム
+home.php → lives/next.php → 本人が管理する今日以降の公演
+  → 中止・終了を除いた直近日 → 残り日数・未完了TODOを表示
+```
+
+`live_events` は共有公演、`user_live_status` 以下は本人の情報です。同じ公演を複数人が管理しても当落や予約は混ざりません。セッション（サーバー側のログイン記録）の本人IDで必ず絞り、他人のtrip_idを送られても取得・編集を拒否します。
+
+ライブ1公演は既存の公開予定1件に対応します。タイトル・日時は `schedules` に一元化し、同期中のカレンダーは変更を反映、自分用に編集済みの内容は維持します。本人の管理を保存するとカレンダーにも重複なく追加されます。延期・中止は削除せず状態として残します。
+
+TODOは表示名を変えても固定識別子で判定するため、再当選で増えません。削除済みの識別子も残し、勝手に復活させません。近場→遠征は交通・ホテルなど不足分だけ追加、逆の変更では既存TODOや予約を削除しません。
+
+APIはJSONでデータを返すPHPの入口、serviceは保存手順、repositoryはDBへの問い合わせ、validatorは入力チェックです。コードを読む順序と認証の仕組みは [Phase 5ガイドの学習解説](docs/PHASE5.md#15-個人情報へのアクセス制御と初心者向け解説) に記載しています。
+
+2026-09-30：Phase 5は131件、既存Phase 3は176件、Phase 4は192件のHTTP確認に合格。一時テストデータ清掃後、全19テーブルの元データが維持されていることを確認しました。JavaScript操作のDOMモデル検証も合格。**実ブラウザでのPC／スマホの見た目・操作確認は未実施**です。[ブラウザ確認手順](docs/PHASE5.md#18-ブラウザで確認する手順) を参照してください。

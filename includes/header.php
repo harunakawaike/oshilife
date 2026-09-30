@@ -17,9 +17,13 @@ $isAuthPage = $isAuthPage ?? false;
     <?php foreach (($extraStyles ?? []) as $style): ?>
     <link rel="stylesheet" href="<?= e(assetUrl('assets/css/' . $style . '.css')) ?>">
     <?php endforeach; ?>
+    <?php if (!$isAuthPage): ?>
+    <link rel="stylesheet" href="<?= e(assetUrl('assets/css/notifications.css')) ?>">
+    <?php endif; ?>
     <link rel="stylesheet" href="<?= e(assetUrl('assets/css/theme.css')) ?>">
     <link id="user-theme" rel="stylesheet" href="<?= e(appUrl('theme.css.php')) ?>">
     <script src="<?= e(assetUrl('assets/js/common.js')) ?>" defer></script>
+    <?php if (!$isAuthPage): ?><script src="<?= e(assetUrl('assets/js/notifications.js')) ?>" defer></script><?php endif; ?>
     <?php if ($isAuthPage): ?>
     <script src="<?= e(assetUrl('assets/js/auth.js')) ?>" defer></script>
     <?php endif; ?>
@@ -35,6 +39,7 @@ $isAuthPage = $isAuthPage ?? false;
     <span class="header-note"><?= $isAuthPage ? '推しとの毎日を、自分らしく。' : 'MY OSHI, MY LIFE' ?></span>
 <?php if (!$isAuthPage): ?>
 <?php require PROJECT_ROOT . '/includes/bottom_nav.php'; ?>
+<?php require PROJECT_ROOT . '/includes/notifications.php'; ?>
 <?php endif; ?>
 </header>
 <main id="main" class="<?= $isAuthPage ? 'auth-main' : 'page-main' ?>">

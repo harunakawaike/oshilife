@@ -10,6 +10,9 @@ $id = positiveOshiId($_GET['id'] ?? null);
 $mode = isset($_GET['id']) ? (($_GET['mode'] ?? '') === 'custom' ? 'custom' : 'edit') : 'create';
 $schedule = $id === null ? null : findScheduleDetail(database(), $id, (int) $user['id']);
 $allowed = $mode === 'create' || ($schedule && $schedule['status'] !== 'deleted' && ($mode === 'edit' ? $schedule['is_owner'] : (!$schedule['is_owner'] && $schedule['is_added'])));
+if ($allowed && $mode === 'edit' && !empty($schedule['live_event_id'])) {
+    header('Location: ' . appUrl('live_form.php?id=' . $schedule['live_event_id'])); exit;
+}
 if (!$allowed) http_response_code(404);
 $myOshis = findMyOshis(database(), (int) $user['id']);
 $initialDate = inputString($_GET, 'date');

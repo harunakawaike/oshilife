@@ -55,3 +55,46 @@ consent=true;await approve.events.click();
 assert.equal(reviewCalls.find((call)=>call.method==='POST').data.correction_id,7);
 assert.equal(listIds['correction-list-message'].textContent,'0件の提案');
 console.log('Feedback UI behavior passed: independent reaction toggles, proposal payload/current value, text rendering, approval confirmation/list refresh.');
+
+// ホームの集計は0件でも3つの数値を同じ配置で表示する。
+const dashboardIds={'monthly-thanks':new Element(),'home-oshi':new Element()};
+dashboardIds['monthly-thanks'].dataset={year:'2026',month:'09'};
+dashboardIds['home-oshi'].value='all';
+const dashboardContext=runtime(dashboardIds,async()=>({year:2026,month:9,calendar_added_count:0,helped_count:1,thanks_count:0}));
+load(dashboardContext,'monthly_summary');await new Promise(setImmediate);
+const metrics=dashboardIds['monthly-thanks'].querySelector('dl');
+assert.equal(metrics.children.length,3);
+assert.deepEqual(metrics.children.map((metric)=>metric.querySelector('dd').textContent),['0','1','0']);
+assert.deepEqual(metrics.children.map((metric)=>metric.querySelector('dt').textContent),['カレンダー追加','助かった！','ありがとう！']);
+
+// 通知の表示済みと既読を区別し、ポップアップが消えても未読を残す。
+Object.defineProperty(Element.prototype,'classList',{get(){return {add:(value)=>{this.className=(this.className||'')+' '+value;}};}});
+Element.prototype.remove=function(){if(this.parent)this.parent.children=this.parent.children.filter((node)=>node!==this);};
+Element.prototype.focus=function(){};
+const noticeIds=Object.fromEntries(['notification-toggle','notification-panel','notification-status','notification-toasts','notification-badge','notification-list','notification-read','notification-close'].map((id)=>[id,new Element()]));
+noticeIds['notification-panel'].hidden=true;
+const timeouts=[];const noticeCalls=[];let shown=false;let read=false;
+const notice={id:9,kind:'thanks',message:'「ありがとう！」が届きました',title:'<b>予定名</b>',created_at:'2026-09-30',path:'schedule_detail.php?id=42',unread:true};
+const noticeContext=vm.createContext({
+    document:{getElementById:(id)=>noticeIds[id],createElement:(tag)=>new Element(tag),addEventListener(){},hidden:false},
+    window:{location:{assign(){}}},
+    setTimeout:(fn,delay)=>{timeouts.push({fn,delay});return timeouts.length;},clearTimeout(){},
+    appUrl:(path)=>'/oshilife-v2/public/'+path,
+    apiRequest:async(path,method,data)=>{
+        noticeCalls.push({path,method,data});
+        if(method==='POST'){if(data.mode==='shown')shown=true;else read=true;return {};}
+        return {notifications:[{...notice,unread:!read}],popups:shown||read?[]:[notice],unread_count:read?0:1};
+    }
+});
+load(noticeContext,'notifications');await new Promise(setImmediate);
+assert.equal(noticeIds['notification-toasts'].children.length,1);
+assert.equal(noticeIds['notification-badge'].textContent,'1');
+assert.equal(shown,true);assert.equal(read,false);
+assert.equal(noticeIds['notification-list'].children[0].children[1].textContent,'<b>予定名</b>');
+timeouts.find((timer)=>timer.delay===12000).fn();
+assert.equal(noticeIds['notification-toasts'].children.length,0);
+await noticeContext.refreshNotifications();
+assert.equal(noticeIds['notification-toasts'].children.length,0);
+await noticeIds['notification-read'].events.click({currentTarget:noticeIds['notification-read']});
+assert.equal(read,true);assert.equal(noticeIds['notification-badge'].hidden,true);
+console.log('Dashboard/notification UI behavior passed: 3 metrics, popup, shown/read separation, no repeat, escaped text.');

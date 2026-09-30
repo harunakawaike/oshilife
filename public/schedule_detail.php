@@ -23,6 +23,7 @@ require PROJECT_ROOT . '/includes/header.php';
 <p class="eyebrow"><?= e($schedule['category_label']) ?></p><h1><?= e($schedule['oshi_emoji'] . implode('', $schedule['member_hearts']) . ' ' . $schedule['title']) ?></h1>
 <?php if ($schedule['status'] === 'cancelled'): ?><p class="notice" role="status">中止になった予定です。</p><?php elseif ($schedule['status'] === 'deleted'): ?><p class="notice" role="status">共有元の予定は削除されました。カレンダーから外すことができます。</p><?php endif; ?>
 <?php if ($schedule['source_type'] === 'customized'): ?><p class="tag">自分用に編集済み・日時などの同期は解除されています</p><?php elseif ($schedule['sync_enabled']): ?><p class="tag lavender">共有予定と同期中</p><?php endif; ?>
+<?php if ($schedule['live_event_id']): ?><p><a class="button secondary small" href="<?= e(appUrl('live_detail.php?id='.$schedule['live_event_id'])) ?>">ライブ管理・当落・遠征を見る →</a></p><?php if ($schedule['live_status']==='postponed'): ?><p class="notice">延期された公演です。</p><?php endif; endif; ?>
 <dl class="schedule-details">
 <dt>日時</dt><dd><?= e($schedule['date']) ?>　<?= $schedule['is_all_day'] ? '終日' : e($schedule['start_time'] ?? '時間未定') ?><?= $schedule['end_time'] ? '〜' . e($schedule['end_time']) : '' ?></dd>
 <dt>推し</dt><dd><?= e($schedule['oshi_emoji'] . ' ' . $schedule['oshi_name']) ?></dd>
@@ -36,7 +37,7 @@ require PROJECT_ROOT . '/includes/header.php';
 <?php if ($schedule['source_type'] === 'customized'): ?><details class="original-schedule"><summary>共有元の内容を確認</summary><p><?= e($schedule['original']['title']) ?></p><p><?= e($schedule['original']['date']) ?> <?= $schedule['original']['is_all_day'] ? '終日' : e($schedule['original']['start_time'] ?? '時間未定') ?></p><p class="multiline"><?= e($schedule['original']['note']) ?></p></details><?php endif; ?>
 <div class="schedule-actions">
 <?php if ($schedule['is_owner'] && $schedule['status'] !== 'deleted'): ?>
-<a class="button primary small" href="<?= e(appUrl('schedule_form.php?id=' . $id)) ?>">予定を編集・中止にする</a><button id="delete-schedule" class="button secondary small" type="button">予定を削除</button>
+<a class="button primary small" href="<?= e(appUrl('schedule_form.php?id=' . $id)) ?>">予定を編集・中止にする</a><?php if (!$schedule['live_event_id']): ?><button id="delete-schedule" class="button secondary small" type="button">予定を削除</button><?php endif; ?>
 <?php elseif (!$schedule['is_owner'] && $schedule['is_added']): ?>
 <span class="tag">✓ カレンダーに追加済み</span>
 <?php if ($schedule['status'] !== 'deleted'): ?><a class="button secondary small" href="<?= e(appUrl('schedule_form.php?id=' . $id . '&mode=custom')) ?>">自分用に編集</a><?php endif; ?>
