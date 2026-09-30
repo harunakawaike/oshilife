@@ -1,0 +1,62 @@
+/* theme.css の役割：全ページの固定色を本人の配色へ揃える。メンバーのハート色は変更しない。 */
+body, .app-shell { background: var(--bg); color: var(--ink); }
+a, a:hover, .secondary, .text-button, .eyebrow, .mini-label,
+.month-step, .brand-mark, .heading-flower, .small-icon, .oshi-edit-panel summary,
+.member-color-options summary { color: var(--accent-text); }
+.brand, .brand:hover { color: var(--ink); }
+.app-header, input, select, textarea, .secondary, .ticket-date, .event-time { border-color: var(--border); }
+input, select, textarea { background: var(--surface); color: var(--ink); color-scheme: var(--color-scheme); }
+input::placeholder { color: var(--muted); opacity: 0.65; }
+input:disabled, .primary:disabled { background: var(--surface); color: var(--muted); opacity: 0.6; }
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .heart-options input:focus-visible + span,
+.oshi-edit-panel summary:focus-visible, .member-color-options summary:focus-visible { outline-color: var(--accent-text); }
+.primary, .primary:hover, .month-day.selected { background: var(--accent); color: var(--on-accent); }
+.tag, .tag.lavender, .chip.active, .month-count, .notice, .original-schedule {
+    background: var(--pink); color: var(--ink); border-color: var(--border);
+}
+.bottom-nav { background: var(--surface); }
+.bottom-nav a { color: var(--muted); }
+.bottom-nav a[aria-current=page], .bottom-nav a[aria-current=page] .nav-icon {
+    background: var(--accent); color: var(--on-accent);
+}
+.oshi-selector, .empty-state, .profile-avatar, .heart-options span,
+.today-card .schedule-card, .live-preview, .funds, .thanks, .live-checklist span {
+    background: var(--surface); color: var(--ink); border-color: var(--border);
+}
+.today-card, .profile-card, .oshi-detail-hero, .concert-cover {
+    background: var(--surface); border: 1px solid var(--border); border-left: 5px solid var(--accent);
+}
+.date-label, .event-row p, .event-time, .profile-avatar, .concert-cover small,
+.concert-cover strong, .cover-year, .live-preview > span { color: var(--ink); }
+.month-weekday:first-child { color: var(--accent-text); }
+.month-day[aria-current=date] { border-color: var(--accent-text); }
+.schedule-card .schedule-warning, .form-message, .field-error, .danger { color: var(--ink); font-weight: 600; }
+.field-error:not(:empty), .schedule-warning:not(:empty) { border-left: 3px solid currentColor; padding-left: 8px; }
+input[aria-invalid=true] { border-color: var(--ink); border-width: 2px; }
+.heart-options input:checked + span { border-color: var(--accent-text); box-shadow: none; }
+.success { background: var(--surface); color: var(--ink); }
+/* 設定はスマホでも色名が読める大きさにし、色だけに選択状態を任せない。 */
+.theme-settings { max-width: 900px; margin-bottom: 28px; scroll-margin-top: 20px; }
+.theme-settings fieldset { border: 0; padding: 0; margin: 24px 0; min-width: 0; }
+.theme-settings legend { font-weight: 600; margin-bottom: 12px; }
+.theme-presets { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.theme-presets label { display: flex; align-items: center; gap: 8px; padding: 10px; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; }
+.theme-presets input { width: 18px; height: 18px; min-height: 0; margin: 0; accent-color: var(--accent-text); }
+.theme-presets span { font-size: 13px; }
+.theme-color-field { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-top: 16px; font-size: 13px; }
+.theme-color-field input[type=color] { width: 80px; height: 48px; padding: 4px; cursor: pointer; }
+.theme-backgrounds, .theme-actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.theme-backgrounds [aria-pressed=true] { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+.theme-settings .status-text { color: var(--ink); }
+@media (min-width:768px) { .theme-presets { grid-template-columns: repeat(4,minmax(0,1fr)); } }
+
+/* 色名に見本を添える。保存・選択状態はradioで伝える。 */
+.theme-presets span::before { content: ''; display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: 6px; border: 1px solid var(--border); vertical-align: -2px; }
+.theme-presets input[value="#2563EB"] + span::before { background: #2563EB; }
+.theme-presets input[value="#00875A"] + span::before { background: #00875A; }
+.theme-presets input[value="#EA580C"] + span::before { background: #EA580C; }
+.theme-presets input[value="#DC2626"] + span::before { background: #DC2626; }
+.theme-presets input[value="#7C3AED"] + span::before { background: #7C3AED; }
+.theme-presets input[value="#DB2777"] + span::before { background: #DB2777; }
+.theme-presets input[value="#FACC15"] + span::before { background: #FACC15; }
+.theme-presets input[value="#252525"] + span::before { background: #252525; }

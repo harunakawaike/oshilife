@@ -1,7 +1,9 @@
-# Oshilife v2 — Phase 2
+# Oshilife v2 — Phase 3
 
 推し活の予定・ライブ・遠征・お金を、自分の推しを中心にまとめるWebアプリです。
 Phase 1の認証基盤に、Phase 2の推し検索・新規作成・編集・自分への登録/解除・メンバーとハートカラー・ホーム推し切替・レスポンシブ対応を追加しました。
+
+Phase 3では予定の公開・非公開登録、月間カレンダー、他ユーザーの予定取り込み、自動同期と自分用編集を追加しました。詳細なファイル一覧・API・DB制約・学習解説・A/B確認手順は [Phase 3実装ガイド](docs/PHASE3.md) を参照してください。
 
 ## 今すぐ開く
 
@@ -439,3 +441,100 @@ python3 tests/phase2_smoke.py
 メンバー追加では、色名付きのハートを選ぶだけで登録できます。色名と保存用の色コードは自動で設定されるため、HEXを入力する必要はありません。「色を細かく調整する（任意）」を開けば、色見本から好きな色を選び、色名も変更できます。メンバー一覧はハートと色名を表示します。
 
 実装では `oshi_validator.php` の `MEMBER_COLOR_PRESETS` をHTMLのdata属性へ渡し、`oshis.js` の `selectMemberColor()` が選択されたハートに合わせて入力値を更新します。DB/APIでは引き続きhex_colorを内部の保存形式として利用し、既存データの変換やDB変更は不要です。
+
+
+## 主要ファイルの役割（Phase 3追加）
+
+| ファイル / ディレクトリ | 役割 |
+| --- | --- |
+| public/schedule_form.php・schedule_detail.php | 予定の入力と詳細画面 |
+| public/calendar.php・discover.php・home.php | 月間／日別予定、公開検索、今日と未追加の新着 |
+| api/schedules/・public/api/schedules/ | 予定の12 API本体と公開入口 |
+| app/services/schedule_service.php | 所有者チェック、保存、取り込み、同期解除 |
+| app/repositories/schedule_repository.php | 元予定と取り込みのJOIN・DBアクセス |
+| app/validators/schedule_validator.php | 日時・URL・IDなどの入力検査 |
+| config/schedules.php | カテゴリと情報元の日本語表示を共通化 |
+| database/migrations/003_schedules.sql | 既存DBを壊さず4テーブル追加（現在適用済み） |
+| public/assets/js/schedules.js | 安全な予定カード表示と追加操作 |
+| scripts/create_demo_users.php | ローカル確認専用A/Bユーザーを生成 |
+
+個別JS・共通UI・テスト・変更ファイルも含めた一覧は [Phase 3ガイド](docs/PHASE3.md) にあります。
+
+## 処理の流れ（Phase 3追加）
+
+```text
+公開予定登録
+schedule_form.php → JavaScript → create API
+  → ログイン・CSRF・入力・重複候補の検査
+  → schedules（予定本体）
+  → schedule_members（複数メンバーとの関係）
+  → schedule_sources（情報元）
+  → 全部成功なら確定 → JSON → 詳細画面
+
+他ユーザーが追加
+公開予定詳細／ホーム／見つける → add-to-calendar API
+  → public・activeを確認 → user_schedulesへ関係だけ登録
+  → 自分のカレンダーに表示
+
+同期
+作成者がschedulesを更新
+  → sync_enabled=trueのユーザーが画面を再取得
+  → 元のschedulesの最新値を読む → 表示も変わる
+
+自分用編集
+自分用に編集 → 同期解除の確認ダイアログ → customize API
+  → sync_enabled=false → custom_*へ保存
+  → 以後、個人のタイトル・日時・終日・メモを表示
+  （元schedule_idは残す）
+
+ホーム新着
+publicかつactive → 自分の推しか → 他人が作った予定か
+  → user_schedulesに本人の取り込みがないか
+  → YES → ホームへ表示
+  → 追加成功 → カードを消す → 件数・今日の予定を再取得
+```
+
+自分が作成した予定はuser_schedulesへ複製しません。非公開予定は常に作成者だけが閲覧できます。同期は画面の取得時に反映し、開いた画面への即時配信ではありません。同期解除後も中止・削除状態は共有元を参照します。
+
+確認ユーザーA/Bの認証情報は `storage/demo-accounts.txt` に保存済み（Git除外・非公開）。[A/B切替手順と検証結果](docs/PHASE3.md#ブラウザでabを切り替える確認手順) に従ってlocalhostで確認してください。API統合検証は合格済みですが、Chrome操作が許可されなかったためブラウザでの描画・操作確認は未実施です。
+
+## 自分の好きな配色にする
+
+マイページ → **画面の色**でメインカラーと背景を選択し、**この色で保存**を押します。ブルー・グリーン・オレンジ・レッド・パープル・ピンク・イエロー・モノトーンの色名から選べるほか、色の見本をクリックして自由に選べます。色コードの入力は不要です。背景はライト・ダーク・自由な色を選択できます。
+
+プレビューは保存前にこの画面へ反映します。「保存した色に戻す」で取り消せます。保存後はホーム、カレンダー、見つける等へ共通で反映し、別端末でも同じアカウントなら設定を読み込みます。既存アカウントの保存色は維持し、文字色・カード色を配色に合わせて生成します。未ログイン時は標準のブルーとライト背景です。
+
+### 主要ファイルの役割（配色追加）
+
+| ファイル | 役割 |
+| --- | --- |
+| `public/profile.php` | 色名と色選択、ライト／ダーク、保存・取消の画面 |
+| `public/assets/js/theme.js` | プレビューとJSON APIへの保存、成功・失敗メッセージ |
+| `app/helpers/theme.php` | 本人の配色の読書き、入力検証、文字色の明暗差を計算 |
+| `api/settings/theme.php` | GETで本人の配色を取得、POSTで保存。認証とCSRFを検査 |
+| `public/api/settings/theme.php` | 上記APIの公開入口 |
+| `public/theme.css.php` | 本人の設定をCSSとして返す。プレビュー時もDBは更新しない |
+| `public/assets/css/theme.css` | ホームの固定グラデーション等を共通変数へ置換する表示ルール |
+| `includes/header.php` | 全ページで共通の配色CSSを読み込む |
+| `tests/theme_smoke.py` / `tests/theme_colors.php` | APIの保存・認可と文字の明暗差を検証 |
+
+### 処理の流れ・コードの解説
+
+```text
+マイページで色を選ぶ → JavaScript → theme.css.php（試着用CSS）→ この画面へ反映
+「この色で保存」 → POST api/settings/theme.php
+  → ログイン本人をセッションで確認 → CSRF・色の形式を検証
+  → user_settingsのtheme_color（背景）とaccent_color（メイン色）を保存
+別のページを開く → 共通ヘッダー → theme.css.php
+  → 本人のuser_settingsを読む → 共通CSS変数 → 保存した配色を表示
+```
+
+セッションはログインした本人をサーバー側で覚える仕組みです。user_idを入力から受け取らずセッションから使うので、他人の配色を上書きできません。既存の `user_settings` 2カラムを使い、DB構造の変更はありません。配色設定のSQLもPDOのprepare/executeで値を別送します。
+
+CSS変数は「背景色」「文字色」などに付ける共通の名前です。各画面へ色を直接埋め込まず、共通の変数を変えて一括反映します。任意の色でも文字が消えないよう、明るさを計算して本文とボタンの文字色を白・黒から選び、リンクも背景との明暗差を確認します。カードは読みやすい明るさに調整し、選んだメインカラーはボタン・ナビ・カードの縁へ反映します。
+
+外部CSSとして返す構成なので、既存のCSP（実行できるスクリプトやCSSの制限）を緩める必要はありません。CSSの入力は6桁の色だけを許可し、CSSへ別の命令が混入するのを防ぎます。本人の色を他のアカウントで使い回さないようCSSはキャッシュしません。
+
+色の候補を追加するなら `THEME_PRESETS` とCSSの色見本、配色の計算は `themeVariables()`、画面の配置は `theme.css` と `profile.php` を変更します。
+
+2026-09-30：32件のHTTP検証で保存・再ログイン後の復元・本人限定・CSRF・不正な色の拒否・プレビューでDBを変更しないことを確認。一時ユーザーは削除済みです。明暗差の自動検証とPHP/JavaScriptの構文検査も実施。実ブラウザでの色選択操作・描画確認は未実施です。

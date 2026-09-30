@@ -39,6 +39,7 @@ async function apiRequest(path, method = 'GET', data = null) {
         const error = new Error(result.message || '処理に失敗しました。');
         error.fields = result.errors || {};
         error.status = response.status;
+        error.duplicates = result.duplicates || [];
         throw error;
     }
     if (result.data.csrf_token) {

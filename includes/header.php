@@ -14,6 +14,11 @@ $isAuthPage = $isAuthPage ?? false;
     <title><?= e($pageTitle) ?> | Oshilife v2</title>
     <link rel="stylesheet" href="<?= e(appUrl('assets/css/common.css')) ?>">
     <link rel="stylesheet" href="<?= e(appUrl('assets/css/' . $pageStyle . '.css')) ?>">
+    <?php foreach (($extraStyles ?? []) as $style): ?>
+    <link rel="stylesheet" href="<?= e(appUrl('assets/css/' . $style . '.css')) ?>">
+    <?php endforeach; ?>
+    <link rel="stylesheet" href="<?= e(appUrl('assets/css/theme.css')) ?>">
+    <link id="user-theme" rel="stylesheet" href="<?= e(appUrl('theme.css.php')) ?>">
     <script src="<?= e(appUrl('assets/js/common.js')) ?>" defer></script>
     <?php if ($isAuthPage): ?>
     <script src="<?= e(appUrl('assets/js/auth.js')) ?>" defer></script>
