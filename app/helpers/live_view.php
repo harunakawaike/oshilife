@@ -43,14 +43,26 @@ function liveSubmit(string $label='保存する'): void
 /** 保存済みの本人TODOを全画面で共通表示する。編集は同じAPIを使う。 */
 function liveTodoSection(int $userId,int $liveId): void
 {
+    require_once __DIR__.'/payment_view.php';
     $todos=findLiveTodos(database(),$userId,$liveId);
+    $live=findLive(database(),$userId,$liveId);
+    $hasPaymentTodo=false;
     echo '<section class="card live-section"><h2>準備TODO <small>自分だけ</small></h2><div class="todo-list">';
     if (!$todos) echo '<p>当選後、近場／遠征を選んで保存すると準備リストが作られます。自分で追加もできます。</p>';
     foreach ($todos as $todo) {
         echo '<div class="todo-row"><label class="todo-check"><input type="checkbox"'.($todo['template_key']==='payment'?' data-ticket-payment="true"':'').' data-todo-toggle="'.(int)$todo['id'].'"'.($todo['is_completed']?' checked':'').'>完了</label><form class="live-form todo-edit" data-api="lives/todos/update" data-reload="true"><input type="hidden" name="id" value="'.(int)$todo['id'].'">';
         liveField('title','TODO',$todo['title'],'text',true);liveField('due_date','期限',$todo['due_date'],'date');
-        echo '<div class="live-actions"><button class="button secondary small">変更を保存</button><button type="button" class="button secondary small" data-delete-api="lives/todos/delete" data-id="'.(int)$todo['id'].'">削除</button></div><p class="live-message" role="status"></p></form></div>';
+        echo '<div class="live-actions"><button class="button secondary small">変更を保存</button><button type="button" class="button secondary small" data-delete-api="lives/todos/delete" data-id="'.(int)$todo['id'].'">削除</button></div><p class="live-message" role="status"></p>';
+        // 入金確認からそのまま反映できるよう、同じTODO内に金額・反映状態を置く。
+        if ($todo['template_key']==='payment') {
+            $hasPaymentTodo=true;
+            renderTicketPayment($userId,$live);
+        }
+        echo '</form></div>';
     }
-    echo '</div><details><summary>＋ TODOを追加</summary><form class="live-form live-fields" data-api="lives/todos/create" data-reload="true"><input type="hidden" name="live_event_id" value="'.$liveId.'">';
+    echo '</div>';
+    // 入金TODOを削除していても、反映済みの支出への入口はTODO欄内に残す。
+    if (!$hasPaymentTodo && !empty($live['ticket_expense_id'])) renderTicketPayment($userId,$live);
+    echo '<details><summary>＋ TODOを追加</summary><form class="live-form live-fields" data-api="lives/todos/create" data-reload="true"><input type="hidden" name="live_event_id" value="'.$liveId.'">';
     liveField('title','TODO','','text',true);liveField('due_date','期限','','date');liveSubmit('追加する');echo '</form></details></section>';
 }

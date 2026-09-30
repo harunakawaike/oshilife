@@ -17,7 +17,6 @@ require PROJECT_ROOT.'/includes/header.php';
 <?php liveSelect('application_status','申込状況',APPLICATION_STATUSES,$live['application_status']??'not_applied');liveSelect('lottery_status','当落・販売状況',LOTTERY_STATUSES,$live['lottery_status']??'pending');liveSelect('trip_type','移動',TRIP_TYPES,$live['trip_type'],true);liveField('ticket_amount','チケット代（円・任意）',$live['ticket_amount'],'number');liveMemo($live['personal_note']);liveSubmit(); ?>
 </form><p class="caption">保存すると自分のカレンダーにも追加されます。当選後に移動区分を選ぶとTODOが作られます。</p></section>
 <?php if ($live['application_status']!==null) liveTodoSection((int)$user['id'],(int)$live['id']); ?>
-<?php renderTicketPayment((int)$user['id'],$live); ?>
 <?php if ($live['trip_id']): ?><a class="button primary" href="<?= e(appUrl('trip_detail.php?id='.$live['trip_id'])) ?>">遠征まとめを見る →</a>
 <?php elseif ($live['trip_type']==='trip'): ?>
 <section class="card live-section"><h2>遠征まとめを作成</h2><form class="live-form live-fields" data-api="trips/create" data-target="trip_detail.php"><input type="hidden" name="live_event_id" value="<?= (int)$live['id'] ?>">

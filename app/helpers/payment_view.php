@@ -33,9 +33,9 @@ function renderTicketPayment(int $userId,array $live): void
 {
     if (empty($live['user_live_status_id'])) return;
     $source = moneySource(database(),$userId,'live_ticket',(int)$live['user_live_status_id']);
-    echo '<section class="card live-section"><h2>チケットのお支払い <small>自分だけ</small></h2>';
+    echo '<div class="todo-ticket-payment" aria-label="チケットのお支払い">';
     echo '<p>チケット代：'.e(paymentYen($source['amount'])).'</p>';
-    echo '<p>'.e(PAYMENT_STATUSES[$source['payment_status']]).'（入金・支払い確認TODOと連動）</p>';
+    echo '<p>'.e(PAYMENT_STATUSES[$source['payment_status']]).'</p>';
     renderPaymentImport($source);
-    echo '</section>';
+    echo '</div>';
 }

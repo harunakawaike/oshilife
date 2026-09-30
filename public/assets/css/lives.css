@@ -16,3 +16,7 @@
 [hidden]{display:none!important}
 
 .live-section p,.live-grid .card p{font-size:.9rem}.live-section .live-date{font-size:1.1rem}.page-heading{flex-wrap:wrap;gap:16px}.live-grid .card{overflow-wrap:anywhere}
+
+/* チケットの会計反映は入金TODOの中にまとめ、入力欄の幅いっぱいを使う。 */
+.todo-ticket-payment{grid-column:1/-1;min-width:0;padding-top:8px;overflow-wrap:anywhere}
+.todo-ticket-payment .payment-import{margin-top:10px}

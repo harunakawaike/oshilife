@@ -23,6 +23,6 @@ renderPaymentImport(moneySource(database(),(int)$user['id'],$sourceType,(int)$it
 ?>
 <div class="live-actions"><a href="<?= e(appUrl('travel_form.php?trip_id='.$trip['id'].'&kind='.$kind.'&id='.$item['id'])) ?>">編集</a><button class="button secondary small" type="button" data-delete-api="trips/<?= e($kind) ?>/delete" data-id="<?= (int)$item['id'] ?>" data-trip-id="<?= (int)$trip['id'] ?>">削除</button></div></article>
 <?php endforeach; ?></div></section>
-<?php endforeach; liveTodoSection((int)$user['id'],(int)$live['id']); renderTicketPayment((int)$user['id'],$live); ?>
+<?php endforeach; liveTodoSection((int)$user['id'],(int)$live['id']); ?>
 <section class="card live-section"><h2>会場</h2><h3><?= e($live['venue_name']) ?></h3><p><?= e($live['prefecture'].' '.$live['address']) ?></p></section>
 <?php require PROJECT_ROOT.'/includes/footer.php'; ?>
