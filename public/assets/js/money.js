@@ -144,7 +144,7 @@
         form.addEventListener('submit',async event=>{
             event.preventDefault();if(form.dataset.saving==='true')return;
             const payload=Object.fromEntries(new FormData(form));
-            if(form.dataset.kind==='expenses')payload.special_effect_eligible=Boolean(eligible.checked&&!eligible.disabled);
+            if(form.dataset.kind==='expenses')payload.special_effect_eligible=Boolean(eligible.checked);
             const button=form.querySelector('button[type="submit"]');const message=form.querySelector('.money-message');
             form.dataset.saving='true';button.disabled=true;message.textContent='保存しています…';
             try {

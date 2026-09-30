@@ -5,10 +5,11 @@ $userId = (int)$user['id'];
 $record = isset($_GET['id'])?findMoneyRecord(database(),'expenses',$userId,livePageId()):null;
 $source = null;
 if (!$record && isset($_GET['source_type'])) {
-    $source = moneySource(database(),$userId,liveChoice($_GET,'source_type',['transportation'=>true,'accommodation'=>true]),livePageId('source_id'));
+    $source = moneySource(database(),$userId,liveChoice($_GET,'source_type',['live_ticket'=>true,'transportation'=>true,'accommodation'=>true]),livePageId('source_id'));
     if ($source['expense_id']) {
         header('Location: '.appUrl('expense_form.php?id='.$source['expense_id']));exit;
     }
+    if (!$source['can_import']) throw new ScheduleOperationException($source['import_reason'],409);
 }
 $values = $record??$source??[];
 $imported = ($values['source_type']??'manual')!=='manual';
@@ -20,11 +21,11 @@ foreach (liveQuery(database(),'SELECT l.id,s.title,s.schedule_date FROM live_eve
 }
 $tripOptions = [''=>'関連付けなし'];
 foreach (liveQuery(database(),'SELECT id,trip_name FROM trips WHERE user_id=? ORDER BY departure_date DESC',[$userId])->fetchAll() as $trip) $tripOptions[$trip['id']] = $trip['trip_name'];
-$pageTitle = $source?'遠征費をお金管理に反映':($record?'支出を編集':'支出を登録');
+$pageTitle = $source?'支払いをお金管理に反映':($record?'支出を編集':'支出を登録');
 require PROJECT_ROOT.'/includes/header.php';
 ?>
 <a href="<?= e(appUrl('money.php')) ?>">← お金管理</a><h1><?= e($pageTitle) ?></h1>
-<?php if ($imported): ?><p>内容を確認して保存してください。元の予約を変更・削除しても、この支出は自動変更されません。反映後の金額変更や取消はお金管理で行えます。</p><?php endif; ?>
+<?php if ($imported): ?><p>内容を確認して保存してください。元の支払い情報や予約を変更・削除しても、この支出は自動変更されません。反映後の金額変更や取消はお金管理で行えます。</p><?php endif; ?>
 <?php if (($source['reservation_status']??'')==='cancelled'): ?><p class="notice">この予約はキャンセル済みです。キャンセル料など、実際に負担する金額と日付を確認してください。</p><?php endif; ?>
 <form class="money-form live-fields card" data-kind="expenses" data-action="<?= $record?'update':'create' ?>">
 <?php if ($record): ?><input type="hidden" name="id" value="<?= (int)$record['id'] ?>"><?php endif; ?>
@@ -37,7 +38,7 @@ liveField('expense_date','支出日',$values['expense_date']??date('Y-m-d'),'dat
 if ($imported) {
     moneyFixed('oshi_id','推し',$values['oshi_id'],$options[$values['oshi_id']]??'共通');
     moneyFixed('live_event_id','関連ライブ',$values['live_event_id'],$liveOptions[$values['live_event_id']]??'');
-    moneyFixed('trip_id','関連遠征',$values['trip_id'],$tripOptions[$values['trip_id']]??'');
+    moneyFixed('trip_id','関連遠征',$values['trip_id'],$tripOptions[$values['trip_id']??'']??'関連付けなし');
     moneyFixed('category','カテゴリ',$values['category'],MONEY_CATEGORIES[$values['category']]['label']);
 } else {
     liveSelect('oshi_id','推し',$options,$values['oshi_id']??'');

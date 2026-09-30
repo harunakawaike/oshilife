@@ -16,6 +16,7 @@ function liveRows(PDO $pdo, int $userId, string $where='1=1', array $values=[], 
     $sql="SELECT l.*,s.title,s.oshi_id,s.schedule_date AS event_date,s.start_time,s.end_time,s.note,s.created_by_user_id,
         o.name AS oshi_name,o.emoji AS oshi_emoji,v.name AS venue_name,v.prefecture,v.address,v.latitude,v.longitude,
         u.application_status,u.lottery_status,u.trip_type,u.note AS personal_note,t.id AS trip_id,
+        u.id AS user_live_status_id,u.ticket_amount,u.ticket_payment_status,u.ticket_paid_date,u.ticket_expense_id,
         (SELECT COUNT(*) FROM todos td WHERE td.user_id=viewer.id AND td.live_event_id=l.id AND td.deleted_at IS NULL AND td.is_completed=0) AS incomplete_todos
         FROM live_events l JOIN schedules s ON s.id=l.schedule_id JOIN oshis o ON o.id=s.oshi_id
         JOIN venues v ON v.id=l.venue_id CROSS JOIN (SELECT :viewer AS id) viewer

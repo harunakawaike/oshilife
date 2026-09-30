@@ -47,7 +47,7 @@ function liveTodoSection(int $userId,int $liveId): void
     echo '<section class="card live-section"><h2>準備TODO <small>自分だけ</small></h2><div class="todo-list">';
     if (!$todos) echo '<p>当選後、近場／遠征を選んで保存すると準備リストが作られます。自分で追加もできます。</p>';
     foreach ($todos as $todo) {
-        echo '<div class="todo-row"><label class="todo-check"><input type="checkbox" data-todo-toggle="'.(int)$todo['id'].'"'.($todo['is_completed']?' checked':'').'>完了</label><form class="live-form todo-edit" data-api="lives/todos/update" data-reload="true"><input type="hidden" name="id" value="'.(int)$todo['id'].'">';
+        echo '<div class="todo-row"><label class="todo-check"><input type="checkbox"'.($todo['template_key']==='payment'?' data-ticket-payment="true"':'').' data-todo-toggle="'.(int)$todo['id'].'"'.($todo['is_completed']?' checked':'').'>完了</label><form class="live-form todo-edit" data-api="lives/todos/update" data-reload="true"><input type="hidden" name="id" value="'.(int)$todo['id'].'">';
         liveField('title','TODO',$todo['title'],'text',true);liveField('due_date','期限',$todo['due_date'],'date');
         echo '<div class="live-actions"><button class="button secondary small">変更を保存</button><button type="button" class="button secondary small" data-delete-api="lives/todos/delete" data-id="'.(int)$todo['id'].'">削除</button></div><p class="live-message" role="status"></p></form></div>';
     }

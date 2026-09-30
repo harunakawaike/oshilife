@@ -51,3 +51,11 @@ await form.events.submit({preventDefault(){}});assert.equal(formRuntime.calls[0]
 const button=new Element('button');button.dataset={moneyDelete:'savings',id:'6',year:'2026'};const removal=setup({deletes:[button]});removal.window.confirm=()=>false;await button.events.click();assert.equal(removal.calls.length,0);removal.window.confirm=()=>true;await button.events.click();assert.equal(removal.calls[0][2].id,'6');
 const home=new Element();home.dataset.year='2026';const oshi=new Element('select');const homeRuntime=setup({ids:{'home-money':home,'home-oshi':oshi},api:async path=>path.endsWith('7')?{...summary,oshi_id:7,balance:'-25000.00'}:summary});await tick();assert(descendants(home).some(node=>node.textContent==='¥62,000'));oshi.value='7';await oshi.events.change();assert.match(homeRuntime.calls.at(-1)[0],/oshi_id=7$/);assert(descendants(home).some(node=>node.textContent==='¥-25,000'));
 console.log('Money UI passed: yearly balance, 12 bars, breakdown, effect tabs/keyboard, decimals, scope, stale responses, category defaults, save/delete and home.');
+// チケット由来の特効対象は確認画面で固定（disabled）だが、trueを送る必要がある。
+const ticketForm=new Element('form');ticketForm.dataset={kind:'expenses',action:'create'};ticketForm.fields={title:'チケット',amount:'15000',expense_date:'2026-10-01',category:'live_ticket',source_type:'live_ticket',source_id:'9'};
+const ticketSubmit=new Element('button');ticketSubmit.type='submit';const ticketMessage=new Element('p');ticketMessage.className='money-message';ticketForm.append(ticketSubmit,ticketMessage);
+const ticketEligible=new Element('input');ticketEligible.checked=true;ticketEligible.disabled=true;
+const ticketRuntime=setup({ids:{'expense-eligible':ticketEligible},forms:[ticketForm],api:async()=>({record:{expense_date:'2026-10-01'}})});
+assert.equal(ticketRuntime.calls.length,0,'確認画面を開くだけでは保存しない');
+await ticketForm.events.submit({preventDefault(){}});assert.equal(ticketRuntime.calls[0][2].special_effect_eligible,true);
+console.log('Ticket confirmation passed: no automatic save; fixed eligibility stays true.');

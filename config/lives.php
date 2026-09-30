@@ -9,3 +9,6 @@ const TRANSPORT_TYPES = ['shinkansen'=>'新幹線','airplane'=>'飛行機','high
 const RESERVATION_STATUSES = ['considering'=>'検討中','reserved'=>'予約済み','cancelled'=>'キャンセル'];
 const LOCAL_TODOS = ['payment'=>'入金 / 支払い確認','ticket'=>'チケット確認','entry'=>'座席 / 入場方法確認','packing'=>'持ち物準備','battery'=>'モバイルバッテリー','route'=>'会場までの経路確認'];
 const TRIP_TODOS = ['payment'=>'入金 / 支払い確認','transport'=>'交通手段予約','hotel'=>'ホテル予約','ticket'=>'チケット確認','entry'=>'座席 / 入場方法確認','packing'=>'荷造り','battery'=>'モバイルバッテリー','route'=>'会場までの経路確認'];
+
+// 予約状況と支払い状況は別。予約済みでも未払いの場合がある。
+const PAYMENT_STATUSES = ['unpaid'=>'支払い未完了','paid'=>'支払い済み'];

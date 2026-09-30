@@ -62,7 +62,9 @@
     }));
     document.querySelectorAll('[data-todo-toggle]').forEach(checkbox=>checkbox.addEventListener('change',async()=>{
         checkbox.disabled=true;
-        try { await apiRequest('api/lives/todos/toggle.php','POST',{id:checkbox.dataset.todoToggle,is_completed:checkbox.checked}); }
+        try { await apiRequest('api/lives/todos/toggle.php','POST',{id:checkbox.dataset.todoToggle,is_completed:checkbox.checked});
+            // 入金TODOの変更後は、チケット反映案内をサーバーの最新状態で表示する。
+            if (checkbox.dataset.ticketPayment === 'true') window.location.reload(); }
         catch(error) { checkbox.checked=!checkbox.checked;window.alert(error.message); }
         finally { checkbox.disabled=false; }
     }));

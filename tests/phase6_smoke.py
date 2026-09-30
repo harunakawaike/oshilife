@@ -166,9 +166,9 @@ try:
     live=post(a,'lives/create',{'oshi_id':oid,'title':'Phase6 Live','venue_id':vid,'event_date':today,'status':'scheduled','start_time':'18:00','open_time':'17:00','end_time':'20:00'},201)['live']
     lid=live['id'];post(a,'lives/status/update',{'live_event_id':lid,'application_status':'applied','lottery_status':'won','trip_type':'trip','note':''})
     trip=post(a,'trips/create',{'live_event_id':lid,'trip_name':'本人の遠征','departure_date':today,'return_date':today,'note':''})['id']
-    transport={'trip_id':trip,'transport_type':'shinkansen','departure_place':'東京','arrival_place':'大阪','departure_at':today+'T08:00','arrival_at':today+'T11:00','amount':'24000.50','reservation_status':'reserved','note':'交通メモ'}
+    transport={'trip_id':trip,'transport_type':'shinkansen','departure_place':'東京','arrival_place':'大阪','departure_at':today+'T08:00','arrival_at':today+'T11:00','amount':'24000.50','reservation_status':'reserved','payment_status':'paid','note':'交通メモ'}
     transportId=post(a,'trips/transport/create',transport)['id']
-    hotel={'trip_id':trip,'hotel_name':'ホテル','check_in_at':today+'T15:00','check_out_at':(now.date()+timedelta(days=1)).isoformat()+'T10:00','amount':'8000','reservation_status':'reserved','url':'https://example.com','note':'ホテルメモ'}
+    hotel={'trip_id':trip,'hotel_name':'ホテル','check_in_at':today+'T15:00','check_out_at':(now.date()+timedelta(days=1)).isoformat()+'T10:00','amount':'8000','reservation_status':'reserved','payment_status':'paid','url':'https://example.com','note':'ホテルメモ'}
     hotelId=post(a,'trips/accommodation/create',hotel)['id']
     # 確認画面を開くだけでは支出は追加されない。
     assert amount(dashboard()['expenses'])==58000
@@ -211,7 +211,7 @@ try:
     _,html=a.call('expense_form.php?id='+str(goods));assert '&lt;script&gt;' in html
     _,html=a.call('profile.php');assert '/money.php' in html
     _,html=a.call('home.php');assert 'id="home-money"' in html and '¥30,000' not in html
-    _,html=a.call('trip_detail.php?id='+str(trip));assert '登録済みの支出を編集' in html
+    _,html=a.call('trip_detail.php?id='+str(trip));assert '✓ お金管理に反映済み' in html
     # 1年30件ずつのページ送りでも本人条件を維持。
     for i in range(31):post(a,'money/savings/create',saving(0,jan,oid),201)
     assert len(get(a,'money/savings/list',year=year)['items'])==30

@@ -27,6 +27,6 @@ if ($kind==='transport') {
     foreach (['check_in_at'=>'チェックイン','check_out_at'=>'チェックアウト'] as $key=>$text) liveField($key,$text,isset($item[$key])?str_replace(' ','T',substr($item[$key],0,16)):'','datetime-local',true);
     liveField('address','住所',$item['address']??'');liveField('url','予約ページのURL',$item['url']??'','url');
 }
-liveField('amount','金額（円・任意）',$item['amount']??'','number');liveSelect('reservation_status','予約状況',RESERVATION_STATUSES,$item['reservation_status']??'considering');liveMemo($item['note']??'');liveSubmit();
+liveField('amount','金額（円・任意）',$item['amount']??'','number');liveSelect('reservation_status','予約状況',RESERVATION_STATUSES,$item['reservation_status']??'considering');liveSelect('payment_status','支払い状況',PAYMENT_STATUSES,$item['payment_status']??'unpaid');liveMemo($item['note']??'');liveSubmit();
 ?>
 </form><?php require PROJECT_ROOT.'/includes/footer.php'; ?>

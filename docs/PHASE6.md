@@ -92,7 +92,7 @@ INDEXは検索条件に合う行を探すための目印、UNIQUEは重複を拒
 | GET | categories.php | year、oshi_id。カテゴリ別支出 |
 | GET | by-oshi.php | year、oshi_id。本人の推し別内訳 |
 | GET | special-effects.php | year、oshi_id。対象額、各基準、発数、注意書き |
-| GET | source.php | source_type=transportation/accommodation、source_id。確認用初期値と反映済み支出ID |
+| GET | source.php | source_type=live_ticket/transportation/accommodation、source_id。確認用初期値と反映済み支出ID |
 
 year省略時は現在年、oshi_idのall・空値は全推し。推しID指定時は本人が登録している推しか確認します。対象年は1000〜9998年、pageは1〜10000。記録の日付もこの年の範囲です。
 
@@ -161,6 +161,8 @@ year省略時は現在年、oshi_idのall・空値は全推し。推しID指定�
 
 ## 13. 遠征費からexpensesへの反映
 
+追記：反映条件は[支払い連携ガイド](PAYMENT_IMPORT.md)のとおり、予約済み・支払い済み・金額>0に限定しました。チケットも入金TODOから反映できます。
+
 ```text
 本人のtransportation / accommodation
   → 遠征まとめの「お金管理に反映」
@@ -169,7 +171,7 @@ year省略時は現在年、oshi_idのall・空値は全推し。推しID指定�
   → 元予約の所有者を再確認 → expensesへ登録
 ```
 
-確認画面を開いただけでは支出は作られません。金額未設定の予約も反映画面で金額を入力できます。取消済み予約には確認文を表示し、キャンセル料など実際の負担額を入力できます。
+確認画面を開いただけでは支出は作られません。金額未設定や予約キャンセル中のものには反映ボタンを出しません。キャンセル料などは必要に応じて手入力の支出として記録できます。
 
 反映した支出は**確認時の内容を保存した記録**です。元予約の金額変更・予約削除・キャンセルで支出を自動更新しません。反映後の金額修正・削除は支出側で行います。二重に課金されたような集計や、記録の予期しない消失を防ぐためです。
 
@@ -177,7 +179,7 @@ year省略時は現在年、oshi_idのall・空値は全推し。推しID指定�
 
 ## 14. 二重登録防止
 
-source_typeにmanual／transportation／accommodation、source_idに元予約のIDを保存します。本人＋種類＋元IDのUNIQUEにより、同時に2タブから保存しても1件しか作れません。2回目の保存は409で案内し、遠征画面のリンクは「登録済みの支出を編集」へ変わります。
+source_typeにmanual／live_ticket／transportation／accommodation、source_idに元の個人管理・予約IDを保存します。本人＋種類＋元IDのUNIQUEにより、同時に2タブから保存しても1件しか作れません。2回目の保存は409で案内し、遠征画面のリンクは「登録済みの支出を編集」へ変わります。
 
 支出を削除した場合はその反映記録もなくなり、元予約が残っていれば再確認して再登録できます。有効な支出が同じ予約から二重になることはありません。手入力支出と元予約の同一性までは自動推測しないため、すでに手入力した費用を重ねて反映しないよう内容を確認してください。
 

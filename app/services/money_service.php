@@ -39,7 +39,7 @@ function saveMoneyRecord(int $userId,string $table,array $raw,?int $id): int
                 validateMoneyOshi($pdo,$userId,$values['oshi_id'],$existing);
             } else {
                 $sourceType = $existing['source_type'] ?? ($raw['source_type']??'manual');
-                if (!in_array($sourceType,['manual','transportation','accommodation'],true)) throw new ScheduleOperationException('支出の反映元が正しくありません。',422);
+                if (!in_array($sourceType,['manual','live_ticket','transportation','accommodation'],true)) throw new ScheduleOperationException('支出の反映元が正しくありません。',422);
                 if ($sourceType==='manual') {
                     if (!empty($raw['source_id']) || !empty($raw['room_expense_id'])) throw new ScheduleOperationException('手入力の支出に反映元IDは指定できません。',422);
                     validateMoneyLinks($pdo,$userId,$values,$existing);
@@ -47,15 +47,25 @@ function saveMoneyRecord(int $userId,string $table,array $raw,?int $id): int
                 } else {
                     // 編集時は登録時の関連を維持する。元予約が消えても保存した支出は編集できる。
                     $source = $existing ?? moneySource($pdo,$userId,$sourceType,positiveOshiId($raw['source_id']??null)??throw new ScheduleOperationException('反映元を指定してください。',422),true);
+                    if ($existing === null) {
+                        if ($source['expense_id'] !== null) throw new ScheduleOperationException('すでにお金管理に反映済みです。',409);
+                        if (!$source['can_import']) throw new ScheduleOperationException($source['import_reason'],409);
+                        if (moneyCents($values['amount']) <= 0) throw new ScheduleOperationException('反映する金額は0円より大きくしてください。',422);
+                    }
                     foreach (['oshi_id','live_event_id','trip_id','category'] as $key) {
                         if ((string)$values[$key] !== (string)$source[$key]) throw new ScheduleOperationException('反映元の推し・ライブ・遠征・カテゴリは変更できません。',422);
                     }
-                    if ($values['special_effect_eligible']) throw new ScheduleOperationException('遠征費は特効換算対象外です。',422);
+                    $expectedEligible = $sourceType==='live_ticket' ? 1 : 0;
+                    if ($values['special_effect_eligible'] !== $expectedEligible) throw new ScheduleOperationException('チケットは特効対象、交通・ホテルは対象外で登録してください。',422);
                     $values += ['source_type'=>$sourceType,'source_id'=>$source['source_id'],'room_expense_id'=>null];
                 }
             }
             $values['user_id'] = $userId;
-            return writeLiveRecord($pdo,$table,$values,$id);
+            $savedId = writeLiveRecord($pdo,$table,$values,$id);
+            if ($table==='expenses' && $id===null && $values['source_type']!=='manual') {
+                linkMoneySource($pdo,$values['source_type'],(int)$values['source_id'],$savedId);
+            }
+            return $savedId;
         });
     } catch (PDOException $error) {
         // 2つのタブから同時に押されても、DBのUNIQUE制約で二重反映を止める。
@@ -68,6 +78,8 @@ function deleteMoneyRecord(int $userId,string $table,int $id): void
 {
     liveTransaction(function(PDO $pdo) use($userId,$table,$id) {
         findMoneyRecord($pdo,$table,$userId,$id,true);
+        // 元のexpense_idは外部キーのON DELETE SET NULLで同時に解除される。
+        // 支払済み状態と金額は残るため、条件を満たせばもう一度確認して反映できる。
         liveQuery($pdo,"DELETE FROM $table WHERE id=? AND user_id=?",[$id,$userId]);
     });
 }

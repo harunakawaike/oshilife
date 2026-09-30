@@ -115,24 +115,69 @@ function listMoneyRecords(PDO $pdo, string $table, int $userId, int $year, ?int 
         LEFT JOIN oshis o ON o.id=m.oshi_id WHERE $where ORDER BY m.$date DESC,m.id DESC LIMIT 30 OFFSET ".(($page-1)*30), $values)->fetchAll();
     return ['items'=>$rows,'total'=>$total,'has_more'=>$page*30<$total];
 }
-/** 予約IDを本人の遠征まで辿って検証する。確認画面の初期値であり、この時点では支出を作らない。 */
+/** 支払い済み候補を本人限定で取得。表示と保存時に同じ反映条件を使う。 */
 function moneySource(PDO $pdo, int $userId, string $type, int $id, bool $lock = false): array
 {
-    if (!in_array($type,['transportation','accommodation'],true)) throw new ScheduleOperationException('反映元が正しくありません。',422);
-    $table = $type==='transportation'?'transportations':'accommodations';
-    $row = liveQuery($pdo, "SELECT item.*,t.live_event_id FROM $table item JOIN trips t ON t.id=item.trip_id
-        WHERE item.id=? AND t.user_id=?".($lock?' FOR UPDATE':''), [$id,$userId])->fetch();
-    if (!$row) throw new ScheduleOperationException('反映できる予約が見つかりません。',404);
-    $live = findLive($pdo,$userId,(int)$row['live_event_id']);
-    $title = $type==='transportation'
-        ? (($row['transport_type']==='other'?$row['transport_type_other']:TRANSPORT_TYPES[$row['transport_type']]).' '.$row['departure_place'].' → '.$row['arrival_place'])
-        : $row['hotel_name'];
-    $expenseId = liveQuery($pdo,'SELECT id FROM expenses WHERE user_id=? AND source_type=? AND source_id=?',[$userId,$type,$id])->fetchColumn();
+    if (!in_array($type,['live_ticket','transportation','accommodation'],true)) {
+        throw new ScheduleOperationException('反映元が正しくありません。',422);
+    }
+    if ($type === 'live_ticket') {
+        // source_idは共有公演IDではなく、本人のuser_live_status.id。
+        $row = liveQuery($pdo,'SELECT * FROM user_live_status WHERE id=? AND user_id=?'.($lock?' FOR UPDATE':''),[$id,$userId])->fetch();
+        if (!$row) throw new ScheduleOperationException('本人のチケット情報が見つかりません。',404);
+        $todo = liveQuery($pdo,"SELECT is_completed FROM todos WHERE user_id=? AND live_event_id=? AND template_key='payment' AND deleted_at IS NULL".($lock?' FOR UPDATE':''),[$userId,$row['live_event_id']])->fetch();
+        $live = findLive($pdo,$userId,(int)$row['live_event_id']);
+        $amount = $row['ticket_amount'];
+        $paid = $todo && (bool)$todo['is_completed'] && $row['ticket_payment_status']==='paid';
+        $ready = $row['lottery_status']==='won' && $paid && moneyCents($amount??'0')>0;
+        $expenseId = $row['ticket_expense_id'];
+        $title = mb_substr($live['title'],0,110,'UTF-8').' '.$live['event_date'].' チケット';
+        $date = $row['ticket_paid_date']??date('Y-m-d');
+        $tripId = $live['trip_id'];
+        $payment = $paid?'paid':'unpaid';
+        $reservation = null;
+        $reason = '当選・チケット金額が0円より大きい・入金TODO完了の3条件を確認してください。';
+    } else {
+        $table = $type==='transportation'?'transportations':'accommodations';
+        $row = liveQuery($pdo,"SELECT item.*,t.live_event_id FROM $table item JOIN trips t ON t.id=item.trip_id WHERE item.id=? AND t.user_id=?",[$id,$userId])->fetch();
+        if (!$row) throw new ScheduleOperationException('反映できる予約が見つかりません。',404);
+        if ($lock) {
+            // 予約編集と同じ親→子の順番でロックし、確認後の支払い取消も再検査する。
+            requireOwnTrip($pdo,$userId,(int)$row['trip_id'],true);
+            $locked = liveQuery($pdo,"SELECT * FROM $table WHERE id=? AND trip_id=? FOR UPDATE",[$id,$row['trip_id']])->fetch();
+            if (!$locked) throw new ScheduleOperationException('反映できる予約が見つかりません。',404);
+            $row = $locked + ['live_event_id'=>$row['live_event_id']];
+        }
+        $live = findLive($pdo,$userId,(int)$row['live_event_id']);
+        $amount = $row['amount'];
+        $payment = $row['payment_status'];
+        $reservation = $row['reservation_status'];
+        $ready = $reservation==='reserved' && $payment==='paid' && moneyCents($amount??'0')>0;
+        $expenseId = $row['expense_id'];
+        $title = $type==='transportation'
+            ? (($row['transport_type']==='other'?$row['transport_type_other']:TRANSPORT_TYPES[$row['transport_type']]).' '.$row['departure_place'].' → '.$row['arrival_place'])
+            : $row['hotel_name'].' 宿泊';
+        $date = $row['paid_date']??date('Y-m-d');
+        $tripId = $row['trip_id'];
+        $reason = '予約済み・支払い済み・金額が0円より大きい状態で反映できます。';
+    }
+    $expense = $expenseId===null ? false : liveQuery($pdo,'SELECT amount FROM expenses WHERE id=? AND user_id=?',[$expenseId,$userId])->fetch();
     return [
-        'title'=>mb_substr($title,0,150,'UTF-8'),'amount'=>$row['amount'],'category'=>$type,
-        'expense_date'=>substr($row[$type==='transportation'?'departure_at':'check_in_at'],0,10),
-        'oshi_id'=>$live['oshi_id'],'live_event_id'=>$live['id'],'trip_id'=>$row['trip_id'],
-        'note'=>$row['note'],'source_type'=>$type,'source_id'=>$id,'special_effect_eligible'=>false,
-        'reservation_status'=>$row['reservation_status'],'expense_id'=>$expenseId?:null,
+        'title'=>mb_substr($title,0,150,'UTF-8'),'amount'=>$amount,'category'=>$type,
+        'expense_date'=>$date,'oshi_id'=>$live['oshi_id'],'live_event_id'=>$live['id'],'trip_id'=>$tripId,
+        'note'=>$type==='live_ticket'?'':$row['note'],'source_type'=>$type,'source_id'=>$id,
+        'special_effect_eligible'=>$type==='live_ticket',
+        'reservation_status'=>$reservation,'payment_status'=>$payment,
+        'expense_id'=>$expenseId,'expense_amount'=>$expense?$expense['amount']:null,
+        'amount_changed'=>$expense && ($amount===null || moneyCents($expense['amount'])!==moneyCents($amount)),
+        'can_import'=>$ready && $expenseId===null,'import_reason'=>$reason,
     ];
+}
+
+/** 保存した支出IDを元データへ記録する。呼び出し元のトランザクションで一緒に確定する。 */
+function linkMoneySource(PDO $pdo,string $type,int $sourceId,int $expenseId): void
+{
+    $table = ['live_ticket'=>'user_live_status','transportation'=>'transportations','accommodation'=>'accommodations'][$type];
+    $column = $type==='live_ticket'?'ticket_expense_id':'expense_id';
+    liveQuery($pdo,"UPDATE $table SET $column=? WHERE id=?",[$expenseId,$sourceId]);
 }

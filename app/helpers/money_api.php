@@ -13,7 +13,7 @@ function runMoneyApi(string $route): void
     $raw = $read?$_GET:readJson();
     $pdo = database();
     if ($route==='source') {
-        $source = moneySource($pdo,$userId,liveChoice($raw,'source_type',['transportation'=>true,'accommodation'=>true]),scheduleId($raw['source_id']??null));
+        $source = moneySource($pdo,$userId,liveChoice($raw,'source_type',['live_ticket'=>true,'transportation'=>true,'accommodation'=>true]),scheduleId($raw['source_id']??null));
         apiSuccess(['source'=>$source]);
     }
     if (in_array($parts[0],['savings','expenses'],true)) {

@@ -77,7 +77,7 @@ function saveLiveStatus(int $userId,int $liveId,array $raw): void
     }
     $note = liveText($raw, 'note', '個人メモ', 3000);
 
-    liveTransaction(function (PDO $pdo) use ($userId, $liveId, $application, $lottery, $type, $note) {
+    liveTransaction(function (PDO $pdo) use ($userId, $liveId, $application, $lottery, $type, $note, $raw) {
         $live = findLive($pdo, $userId, $liveId);
         // 同じ公演への同時保存を順番に処理し、TODO生成まで一組で確定する。
         lockSchedule($pdo, (int) $live['schedule_id']);
@@ -91,6 +91,12 @@ function saveLiveStatus(int $userId,int $liveId,array $raw): void
                 trip_type=VALUES(trip_type),note=VALUES(note)',
             [$userId, $liveId, $application, $lottery, $type, $note]
         );
+
+        // 省略時は既存値を維持する。金額の変更だけで会計へ登録・上書きはしない。
+        if (array_key_exists('ticket_amount', $raw)) {
+            $amount = liveAmount(['amount'=>$raw['ticket_amount']]);
+            liveQuery($pdo, 'UPDATE user_live_status SET ticket_amount=? WHERE user_id=? AND live_event_id=?', [$amount,$userId,$liveId]);
+        }
 
         if (!$live['is_owner']) {
             // すでに取り込んでいる場合は何も変更しない。個人編集による同期解除も維持する。
@@ -124,13 +130,23 @@ function changeLiveTodo(int $userId,string $action,array $raw): ?int
     return liveTransaction(function(PDO $pdo) use($userId,$action,$raw) {
         $id=$action==='create'?null:scheduleId($raw['id']??null);
         if ($id!==null) {
+            $todo=liveQuery($pdo,'SELECT * FROM todos WHERE id=? AND user_id=? AND deleted_at IS NULL',[$id,$userId])->fetch();
+            if (!$todo) throw new ScheduleOperationException('TODOが見つかりません。',404);
+            // チケット反映と同じ「個人管理→TODO」の順でロックし、完了取消との競合を防ぐ。
+            liveQuery($pdo,'SELECT id FROM user_live_status WHERE user_id=? AND live_event_id=? FOR UPDATE',[$userId,$todo['live_event_id']]);
             $todo=liveQuery($pdo,'SELECT * FROM todos WHERE id=? AND user_id=? AND deleted_at IS NULL FOR UPDATE',[$id,$userId])->fetch();
             if (!$todo) throw new ScheduleOperationException('TODOが見つかりません。',404);
         }
-        if ($action==='delete') { liveQuery($pdo,'UPDATE todos SET deleted_at=CURRENT_TIMESTAMP WHERE id=?',[$id]);return $id; }
+        if ($action==='delete') {
+            liveQuery($pdo,'UPDATE todos SET deleted_at=CURRENT_TIMESTAMP WHERE id=?',[$id]);
+            syncTicketPaymentFromTodo($pdo,$userId,$todo,false);
+            return $id;
+        }
         if ($action==='toggle') {
             if (!is_bool($raw['is_completed']??null)) throw new ScheduleOperationException('完了状態を指定してください。',422);
-            liveQuery($pdo,'UPDATE todos SET is_completed=? WHERE id=?',[(int)$raw['is_completed'],$id]);return $id;
+            liveQuery($pdo,'UPDATE todos SET is_completed=? WHERE id=?',[(int)$raw['is_completed'],$id]);
+            syncTicketPaymentFromTodo($pdo,$userId,$todo,$raw['is_completed']);
+            return $id;
         }
         $values=['title'=>liveText($raw,'title','TODO',150,true),'due_date'=>liveDate($raw,'due_date',true)];
         if ($action==='create') {
@@ -168,8 +184,26 @@ function changeTravelItem(int $userId,string $kind,string $action,array $raw): ?
     return liveTransaction(function(PDO $pdo) use($userId,$kind,$action,$raw,$table) {
         $tripId=scheduleId($raw['trip_id']??null);requireOwnTrip($pdo,$userId,$tripId,true);
         $id=$action==='create'?null:scheduleId($raw['id']??null);
-        if ($id!==null && !liveQuery($pdo,"SELECT id FROM $table WHERE id=? AND trip_id=?",[$id,$tripId])->fetch()) throw new ScheduleOperationException('予約情報が見つかりません。',404);
+        $existing=$id===null?null:liveQuery($pdo,"SELECT * FROM $table WHERE id=? AND trip_id=? FOR UPDATE",[$id,$tripId])->fetch();
+        if ($id!==null && !$existing) throw new ScheduleOperationException('予約情報が見つかりません。',404);
         if ($action==='delete') { liveQuery($pdo,"DELETE FROM $table WHERE id=?",[$id]);return $id; }
-        return writeLiveRecord($pdo,$table,validateTravelItem($raw,$kind)+['trip_id'=>$tripId],$id);
+        $payment = array_key_exists('payment_status',$raw)
+            ? liveChoice($raw,'payment_status',PAYMENT_STATUSES)
+            : ($existing['payment_status']??'unpaid');
+        // 支払い済みに初めて変えた日を保存。支出日は確認画面で変更できる。
+        $paidDate = $payment==='paid' ? ($existing['paid_date']??date('Y-m-d')) : null;
+        $values = validateTravelItem($raw,$kind) + ['trip_id'=>$tripId,'payment_status'=>$payment,'paid_date'=>$paidDate];
+        return writeLiveRecord($pdo,$table,$values,$id);
     });
+}
+
+/** 固定キーpaymentのTODOだけをチケット支払いに対応させる。expensesへのINSERTは行わない。 */
+function syncTicketPaymentFromTodo(PDO $pdo,int $userId,array $todo,bool $completed): void
+{
+    if ($todo['template_key'] !== 'payment') return;
+    $paidDate = $completed ? date('Y-m-d') : null;
+    $sql = $completed
+        ? "UPDATE user_live_status SET ticket_payment_status='paid',ticket_paid_date=COALESCE(ticket_paid_date,?) WHERE user_id=? AND live_event_id=?"
+        : "UPDATE user_live_status SET ticket_payment_status='unpaid',ticket_paid_date=? WHERE user_id=? AND live_event_id=?";
+    liveQuery($pdo,$sql,[$paidDate,$userId,$todo['live_event_id']]);
 }

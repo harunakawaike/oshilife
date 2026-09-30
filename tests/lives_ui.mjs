@@ -37,3 +37,7 @@ const next=new Element();const selector=new Element();const live={id:12,oshi_emo
 const home=context({ids:{'home-next-live':next,'home-oshi':selector},api:async path=>({live:path.endsWith('77')?null:live})});await tick();assert.equal(next.querySelector('strong').textContent,'今日！');assert(descendants(next).some(e=>e.textContent==='TODO 2件未完了'));selector.value='77';await selector.events.change();assert.match(home.calls.at(-1)[0],/oshi_id=77$/);assert.match(next.textContent+next.children[0].textContent,/まだ登録/);
 const search=new Element('form');search.fields={q:'LIVE',period:'upcoming'};const list=new Element();const more=new Element('button');const message=new Element();const browsing=context({ids:{'live-search':search,'live-list':list,'live-more':more,'live-list-message':message},api:async()=>({lives:[live],has_more:false})});await tick();assert.equal(list.children.length,1);assert.equal(more.hidden,true);search.events.submit({preventDefault(){}});await tick();assert.match(browsing.calls.at(-1)[0],/page=1/);
 console.log('Live UI behavior passed: status save, duplicates, safe text, venue selection, other transport, TODO, delete confirmation, home countdown/filter, list.');
+// 入金TODOだけは保存後に最新の反映案内を再表示する。
+toggle.dataset.ticketPayment='true';toggle.checked=false;
+await toggle.events.change();assert.equal(actions.reloads,2);
+console.log('Payment TODO passed: reload after payment completion/undo to refresh import eligibility.');
