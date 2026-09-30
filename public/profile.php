@@ -13,7 +13,7 @@ require PROJECT_ROOT . '/includes/header.php';
 ?>
 <div class="page-heading"><div><p class="eyebrow">MY OWN OSHI LIFE</p><h1>マイページ</h1></div></div>
 <section class="profile-card"><div class="profile-avatar" aria-hidden="true">♡</div><h2><?= e($user['display_name']) ?></h2><p><?= e($user['email']) ?></p><span class="tag">わたしのOshilife</span></section>
-<section class="section"><h2>自分らしく整える</h2><div class="card settings-list"><a class="settings-link" href="<?= e(appUrl('oshis.php')) ?>"><span>♡ 推し管理</span><span>登録・メンバー管理 →</span></a><a class="settings-link" href="#theme-settings"><span>◐ 画面の色</span><span>好きな色を選ぶ →</span></a><?php foreach (['◌ お金管理', '✧ 推し活の足あと', '⚙ 設定'] as $label): ?><div><span><?= e($label) ?></span><span class="muted">準備中</span></div><?php endforeach; ?></div></section>
+<section class="section"><h2>自分らしく整える</h2><div class="card settings-list"><a class="settings-link" href="<?= e(appUrl('oshis.php')) ?>"><span>♡ 推し管理</span><span>登録・メンバー管理 →</span></a><a class="settings-link" href="<?= e(appUrl('corrections.php')) ?>"><span>届いた修正提案</span><span>確認・承認・履歴 →</span></a><a class="settings-link" href="#theme-settings"><span>◐ 画面の色</span><span>好きな色を選ぶ →</span></a><?php foreach (['◌ お金管理', '✧ 推し活の足あと', '⚙ 設定'] as $label): ?><div><span><?= e($label) ?></span><span class="muted">準備中</span></div><?php endforeach; ?></div></section>
 
 <section id="theme-settings" class="section card theme-settings" aria-labelledby="theme-heading">
 <h2 id="theme-heading">画面の色を、自分らしく</h2>

@@ -5,8 +5,8 @@ require_once __DIR__ . '/../middleware/auth.php';
 $user = requireAuth();
 require_once PROJECT_ROOT . '/app/repositories/oshi_repository.php';
 $myOshis = findMyOshis(database(), (int) $user['id']);
-$pageScripts = ['schedules', 'home'];
-$extraStyles = ['schedules'];
+$pageScripts = ['schedules', 'home', 'monthly_summary'];
+$extraStyles = ['schedules', 'feedback'];
 $pageTitle = 'ホーム';
 $pageStyle = 'home';
 $activePage = 'home';
@@ -21,6 +21,6 @@ require PROJECT_ROOT . '/includes/header.php';
 <section class="today-card"><div class="section-heading"><h2>今日の予定</h2><a href="<?= e(appUrl('calendar.php')) ?>">カレンダー →</a></div><p class="date-label"><?= e(date('n月j日')) ?></p><div id="home-today" class="schedule-stack" data-today="<?= e(date('Y-m-d')) ?>" aria-live="polite"><p>予定を読み込んでいます…</p></div><a class="text-button" href="<?= e(appUrl('schedule_form.php')) ?>">＋ 予定を登録</a></section>
 <section class="section"><div class="section-heading"><h2>新着の公開予定 <span id="unadded-count" class="tag">0件</span></h2><a href="<?= e(appUrl('discover.php')) ?>">見つける →</a></div><div id="home-unadded" class="schedule-stack" aria-live="polite"><p>公開予定を読み込んでいます…</p></div><button id="home-more" class="button secondary small" type="button" hidden>さらに表示</button><p class="caption">自分の推しの予定のうち、まだカレンダーに追加していないものが並びます。</p></section>
 <section class="section"><div class="section-heading"><h2>次のライブ（表示例）</h2><a href="<?= e(appUrl('live.php')) ?>">一覧 →</a></div><article class="live-preview"><div class="ticket-date"><strong>10</strong><span>OCT</span></div><div><span class="mini-label">表示例 / LIVE</span><h3>Autumn live 2026</h3><p>東京 · 開演 18:00</p></div><span aria-hidden="true">♫</span></article></section>
-<div class="two-cards"><section class="card funds"><span class="small-icon">◌</span><h2>推し活資金</h2><strong>¥30,000</strong><p>次の楽しみへ · 表示例</p></section><section class="card thanks"><span class="small-icon">♡</span><h2>最近のありがとう</h2><strong>12<span> 件</span></strong><p>好きでつながる · 表示例</p></section></div>
+<div class="two-cards"><section class="card funds"><span class="small-icon">◌</span><h2>推し活資金</h2><strong>¥30,000</strong><p>次の楽しみへ · 表示例</p></section><section class="card thanks"><span class="small-icon" aria-hidden="true">♡</span><h2>最近のありがとう</h2><div id="monthly-thanks" class="thanks-summary" data-year="<?= e(date('Y')) ?>" data-month="<?= e(date('m')) ?>" aria-live="polite"><p>今月の共有状況を読み込んでいます…</p></div><a class="text-button" href="<?= e(appUrl('corrections.php')) ?>">届いた修正提案を見る →</a></section></div>
 </div>
 <?php require PROJECT_ROOT . '/includes/footer.php'; ?>

@@ -23,5 +23,7 @@ function database(): PDO
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
     ]);
+    // 月次集計の月境界をPHPと合わせる。DBサーバー全体の設定は変更しない。
+    $pdo->exec("SET time_zone = '+09:00'");
     return $pdo;
 }

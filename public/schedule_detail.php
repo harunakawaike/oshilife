@@ -5,11 +5,15 @@ require_once __DIR__ . '/../middleware/auth.php';
 $user = requireAuth();
 require_once PROJECT_ROOT . '/app/repositories/schedule_repository.php';
 require_once PROJECT_ROOT . '/app/validators/schedule_validator.php';
+require_once PROJECT_ROOT . '/app/repositories/feedback_repository.php';
 $id = positiveOshiId($_GET['id'] ?? null);
 $schedule = $id === null ? null : findScheduleDetail(database(), $id, (int) $user['id']);
 if (!$schedule) http_response_code(404);
 $pageTitle = $schedule ? $schedule['title'] : '予定が見つかりません';
+$hasFeedback = $schedule && $schedule['visibility'] === 'public' && $schedule['status'] !== 'deleted';
+$extraStyles = ['feedback'];
 $pageStyle = 'schedules'; $pageScripts = $schedule ? ['schedules', 'schedule_detail'] : []; $activePage = 'calendar';
+if ($hasFeedback) $pageScripts[] = 'feedback';
 require PROJECT_ROOT . '/includes/header.php';
 ?>
 <a class="page-back" href="<?= e(appUrl('calendar.php')) ?>">← カレンダー</a>
@@ -27,7 +31,7 @@ require PROJECT_ROOT . '/includes/header.php';
 <dt>公開範囲</dt><dd><?= $schedule['visibility'] === 'public' ? 'みんなに公開' : '自分だけ（非公開）' ?></dd>
 <dt>登録者</dt><dd><?= e($schedule['creator_name']) ?></dd><dt>共有元の更新日時</dt><dd><?= e($schedule['updated_at']) ?></dd>
 <dt>メモ</dt><dd class="multiline"><?= e($schedule['note'] ?: 'メモはありません。') ?></dd>
-<dt>情報元</dt><dd><?php if (!$schedule['sources']): ?>情報元は登録されていません。<?php endif; ?><?php foreach ($schedule['sources'] as $source): ?><div class="source-detail"><strong><?= e($source['label']) ?></strong><?php if ($source['source_url']): ?> <a href="<?= e($source['source_url']) ?>" target="_blank" rel="noopener noreferrer">情報元を開く ↗</a><?php endif; ?><p><?= e($source['note']) ?></p></div><?php endforeach; ?></dd>
+<dt>情報元</dt><dd><?php if (!$schedule['sources']): ?>情報元は登録されていません。<?php endif; ?><?php foreach ($schedule['sources'] as $source): ?><div class="source-detail"><strong><?= e($source['label']) ?></strong><?php if ($source['source_url']): ?> <a href="<?= e($source['source_url']) ?>" target="_blank" rel="noopener noreferrer">元情報を見る ↗</a><?php endif; ?><p><?= e($source['note']) ?></p></div><?php endforeach; ?></dd>
 </dl>
 <?php if ($schedule['source_type'] === 'customized'): ?><details class="original-schedule"><summary>共有元の内容を確認</summary><p><?= e($schedule['original']['title']) ?></p><p><?= e($schedule['original']['date']) ?> <?= $schedule['original']['is_all_day'] ? '終日' : e($schedule['original']['start_time'] ?? '時間未定') ?></p><p class="multiline"><?= e($schedule['original']['note']) ?></p></details><?php endif; ?>
 <div class="schedule-actions">
@@ -41,6 +45,7 @@ require PROJECT_ROOT . '/includes/header.php';
 <button id="add-schedule" class="button primary small" type="button">自分のカレンダーに追加</button>
 <?php endif; ?>
 </div><p id="schedule-detail-message" class="form-message" role="alert"></p>
+<?php if ($hasFeedback) require PROJECT_ROOT . '/includes/schedule_feedback.php'; ?>
 </article>
 <?php endif; ?>
 <?php require PROJECT_ROOT . '/includes/footer.php'; ?>

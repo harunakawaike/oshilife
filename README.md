@@ -1,9 +1,11 @@
-# Oshilife v2 — Phase 3
+# Oshilife v2 — Phase 4
 
 推し活の予定・ライブ・遠征・お金を、自分の推しを中心にまとめるWebアプリです。
 Phase 1の認証基盤に、Phase 2の推し検索・新規作成・編集・自分への登録/解除・メンバーとハートカラー・ホーム推し切替・レスポンシブ対応を追加しました。
 
 Phase 3では予定の公開・非公開登録、月間カレンダー、他ユーザーの予定取り込み、自動同期と自分用編集を追加しました。詳細なファイル一覧・API・DB制約・学習解説・A/B確認手順は [Phase 3実装ガイド](docs/PHASE3.md) を参照してください。
+
+Phase 4では修正提案・投稿者の承認／却下・感謝のリアクション・共有状況・当月集計を追加しました。[Phase 4実装ガイド](docs/PHASE4.md) に全ファイル、API、DB制約、確認手順をまとめています。
 
 ## 今すぐ開く
 
@@ -409,18 +411,17 @@ python3 tests/phase2_smoke.py
 
 詳しい変更ファイルと結果は [Phase 2レポート](docs/PHASE2.md)、認証の基本は [学習ガイド](docs/LEARNING.md) にまとめました。
 
-## 未実装とPhase 3へ進む前の確認
+## 未実装とPhase 5へ進む前の確認
 
-スケジュール本機能、公開予定共有、自動同期、修正提案、helped/thanksのリアクション、ライブ本機能、遠征、お金、連番ルーム、Chatは未実装です。ホームの推し選択肢は実データですが、予定や資金の絞り込みはまだ行いません。推しの無効化画面、メンバー編集・削除、ユーザーテーマ変更、メール確認・パスワード再設定も未実装です。
+予定共有・同期・修正提案・感謝のリアクション・配色設定は実装済みです。ライブ本機能、遠征、会場周辺スポット、お金管理、特効換算、連番ルーム、Chat、月次カードの固定保存、年末振り返りは未実装です。推しの無効化画面、メンバー編集・削除、メール確認・パスワード再設定も今後の範囲です。
 
-- 共有マスターの共同編集・修正提案・作成者退会後の管理権限を決める。
-- 同名・別種別、誤登録、論理削除からの復帰ルールを決める。
-- 予定には認証だけでなく本人が編集できるかの権限確認を入れる。
-- ホームの公開予定は未追加だけ表示し、カレンダーへ追加後は除外する。
-- 次のDB変更も新しいmigration SQLで追加する。schema.sqlの再実行はしない。
+- 実ブラウザのスマホ／PC表示と操作を確認する。
+- 月次集計は現在残る追加・リアクションを数える仕様を確認する。
+- 共有マスターの共同管理・作成者退会後の権限、論理削除からの復帰ルールを決める。
+- 次のDB変更も新しいmigration SQLで追加する。既存DBへschema.sqlを再実行しない。
 - スマホアプリ化では現在のCookieセッションからの認証方式・CORS・CSRFを別途設計する。
 
-将来のテーブル：schedules、schedule_members、schedule_sources、user_schedules、correction_requests、reactions、live_events、user_live_status、trips、transportations、accommodations、todos、venues、venue_spots、savings、expenses、monthly_thanks、yearly_reviews、rooms、room_members、room_applications、room_application_members、room_todos、room_expenses、room_expense_members、room_settlements、room_messages。
+今回の未実装範囲と詳しい確認事項は [Phase 4ガイド](docs/PHASE4.md#未実装phase-5前の確認事項) を参照してください。
 
 ## 登録した推し情報の編集
 
@@ -555,3 +556,50 @@ CSS変数は「背景色」「文字色」などに付ける共通の名前で�
 共通ヘッダーからCSS/JavaScriptを読み込むとき、`app/helpers/view.php` の `assetUrl()` がファイル内容のハッシュ（内容から作る識別子）を `?v=...` としてURLへ付けます。ファイル更新時にURLが変わるため、ブラウザーが前のJavaScriptを使い続けることを防ぎます。本人別の動的な配色CSSは従来どおりno-storeで取得します。
 
 カレンダーの日付は数字だけを表示し、押すとその日付の登録画面へ進みます。下の件数ボタンは一覧表示です。2026-09-30、localhostが返すHTMLのバージョン付きURL、実際に配信されるJSとローカルファイルの一致、日付の引き継ぎを含む158件のHTTP検証に合格しました。ブラウザーに古いコードが残っていたか自体は直接確認していません。
+
+
+## 主要ファイルの役割（Phase 4追加）
+
+| ファイル / ディレクトリ | 役割 |
+| --- | --- |
+| config/feedback.php | 修正項目・状態・感謝の種類を共通管理 |
+| app/services/feedback_service.php | 修正提案・承認・却下・感謝の切替と権限検査 |
+| app/repositories/feedback_repository.php | 提案履歴・共有状況・月次集計のSQL |
+| app/helpers/feedback_api.php | API共通の認証・CSRF・サービス読み込み |
+| public/corrections.php | 投稿者本人に届いた提案を確認する画面 |
+| includes/schedule_feedback.php | 公開予定詳細の感謝・共有状況・提案フォーム |
+| public/assets/js/feedback.js・corrections.js・monthly_summary.js | 詳細・提案一覧・ホーム集計の動き |
+| public/assets/css/feedback.css | 本人の配色とスマホ／PCに合わせた表示 |
+| api/schedules/corrections/・reactions/・stats.php | 提案4 API、感謝2 API、共有状況API |
+| api/reflections/monthly-summary.php | 将来の振り返りにも使える当月／指定月の集計 |
+| database/migrations/004_feedback.sql | correction_requestsとreactionsを追加（現在のDBは適用済み） |
+
+## 処理の流れ（Phase 4追加）
+
+```text
+修正提案
+Bさん → 公開予定 → 修正を提案 → correction_requestsへpendingで保存
+  → Aさん（投稿者）がマイページで確認
+  → 承認 → schedulesの1項目だけ更新＋提案をapprovedに変更
+  → 同期中ユーザーが次に予定を取得 → 最新内容を表示
+  → 自分用編集のcustom_*は保持
+
+リアクション
+公開予定 → 助かった！／ありがとう！ → toggle API
+  → reactionsへ追加（再度押すと本人の同種行を解除）
+  → 種類別に集計 → 件数・本人の選択状態を表示
+
+共有状況
+user_schedules → カレンダー追加の件数・人数
+reactions → 助かった！・ありがとう！の件数
+  → 本人の公開予定に限定 → 月初以上・翌月初未満で絞る
+  → ホーム「最近のありがとう」へ表示
+```
+
+他人が直接UPDATE（DBの上書き）できると、未確認の内容が同期先へ広がるため、提案用テーブルで確認を待ちます。承認APIは投稿者本人か検査し、提案後に元の値が変わっていた場合も上書きを拒否します。トランザクションで元予定と履歴を一緒に確定し、却下しても履歴を残します。
+
+reactionsのUNIQUE制約は同じ予定・本人・種類の二重登録を防ぎます。toggleは未登録なら追加、登録済みなら解除という切替です。COUNTは件数、COUNT DISTINCTは重複しない人数。1人が2予定を取り込むと2件・1人です。月次は開催日ではなく追加・感謝が行われた日時で数え、解除した行は集計から外れます。順位は作らず、本人へ共有が役立ったことを伝えます。
+
+情報元は共通の種類名と「元情報を見る」リンクで表示し、登録件数・更新日時・確認待ち提案の有無を添えます。未承認の内容や根拠のない信頼度スコアは正式情報として扱いません。
+
+[Phase 4ガイドの確認手順](docs/PHASE4.md#ブラウザで確認する手順) でA/B/Cを切り替えて確認できます。APIとDOMモデルの検証は合格済みですが、実ブラウザでの描画・操作確認は残っています。

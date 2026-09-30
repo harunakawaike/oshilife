@@ -8,7 +8,7 @@ const SCHEDULE_CATEGORIES = [
 ];
 const SCHEDULE_SOURCE_TYPES = [
     'official_site' => '公式サイト', 'official_sns' => '公式SNS', 'fanclub' => 'ファンクラブ',
-    'official_mail' => '公式メール', 'tv_station' => 'テレビ局',
+    'official_mail' => '公式メール', 'tv_station' => 'TV局 / 番組公式',
     'magazine_official' => '雑誌公式', 'other' => 'その他',
 ];
 const SCHEDULE_STATUSES = ['active' => '予定あり', 'cancelled' => '中止', 'deleted' => '削除済み'];
