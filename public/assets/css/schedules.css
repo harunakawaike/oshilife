@@ -197,10 +197,7 @@
     color:var(--ink);
     font-size:13px
 }
-.month-day[aria-current=date] {
-    border-color:#c49aa9
-}
-.month-day.selected {
+.month-cell.selected {
     background:var(--accent);
     color:white
 }
@@ -346,3 +343,21 @@
         overflow:auto
     }
 }
+
+/* 日付は登録リンク、件数は日別一覧ボタン。操作を入れ子にせずキーボードでも使えるようにする。 */
+.month-cell { border: 1px solid transparent; border-radius: 12px; min-width: 0; display: grid; grid-template-rows: minmax(44px,auto) 28px; gap: 0; }
+.month-cell .month-day { min-height: 44px; }
+.month-view { min-height: 28px; padding: 2px 0; border: 0; border-radius: 4px; background: transparent; color: var(--muted); font: inherit; font-size: 10px; font-weight: 400; }
+.month-view:hover { text-decoration: underline; text-underline-offset: 3px; }
+@media (min-width:768px) { .month-cell .month-day { min-height: 55px; } .month-view { font-size: 11px; } }
+
+/* 日付は数字だけを表示し、数字の周囲も登録リンクとして押せるようにする。 */
+.month-cell .month-day { text-decoration: none; }
+
+/* 日別一覧の件数もバッジにせず、小さな補足として表示する。 */
+.calendar-day-count { font-size: 11px; font-weight: 400; color: var(--muted); }
+
+/* 選択日は日付と件数を含む背景色だけで示す。キーボード操作時のフォーカス表示は残す。 */
+.month-cell.selected .month-day,
+.month-cell.selected .month-view { background: transparent; color: inherit; }
+.month-cell.selected :focus-visible { outline-color: var(--on-accent); }

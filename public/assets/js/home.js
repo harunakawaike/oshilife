@@ -20,7 +20,7 @@ async function loadHomeSchedules(append = false) {
         ]);
         if (request !== homeRequest) return;
         const dayList = document.getElementById('home-today');
-        dayList.replaceChildren(...day.schedules.map((item) => scheduleCard(item)));
+        dayList.replaceChildren(...day.schedules.map((item) => scheduleCard(item, { onRemoved: () => loadHomeSchedules() })));
         if (!day.schedules.length) scheduleEmpty(dayList, '今日の予定はまだありません。');
         const list = document.getElementById('home-unadded');
         if (!append) list.replaceChildren();

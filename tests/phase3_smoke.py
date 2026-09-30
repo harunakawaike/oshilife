@@ -150,6 +150,31 @@ try:
     assert a.call('api/schedules/duplicate-check.php?'+dupquery)['data']['duplicates']
     sid2 = post(a,'create',{**payload,'allow_duplicate':True},201)['data']['schedule']['id']
     private = post(a,'create',{**payload,'visibility':'private','title':'秘密 '+key},201)['data']['schedule']['id']
+    # 実画面と同じゼロ埋め月で取得し、本人の非公開予定も表示対象になることを確認する。
+    assert private in [x['id'] for x in rows(a,'list',date=str(today))]
+    assert private in [x['id'] for x in rows(a,'calendar',year=today.year,month=f'{today.month:02d}')]
+    september_private = post(a,'create',{**payload,'visibility':'private','title':'9月の非公開 '+key,'schedule_date':'2026-09-30','is_all_day':True},201)['data']['schedule']['id']
+    for month in range(1,13):
+        plain = rows(a,'calendar',year=2026,month=str(month))
+        padded = rows(a,'calendar',year=2026,month=f'{month:02d}')
+        assert plain == padded
+        if month == 9:
+            assert september_private in [x['id'] for x in padded]
+            assert september_private not in [x['id'] for x in rows(b,'calendar',year=2026,month='09')]
+    for invalid in ['00','13','009','1.0','-1','+1',' 9','9x','']:
+        a.call('api/schedules/calendar.php?'+urllib.parse.urlencode({'year':'2026','month':invalid}),status=422)
+    a.call('api/schedules/calendar.php?year=2026&month[]=09',status=422)
+    # 日付リンク先のフォームに選択日が入り、本人の削除後はホーム・月間の両方から消える。
+    calendar_html = a.call('calendar.php')[1]
+    import hashlib
+    version = hashlib.sha256((root/'public/assets/js/calendar.js').read_bytes()).hexdigest()[:12]
+    assert f'assets/js/calendar.js?v={version}' in calendar_html
+    served_js = a.call(f'assets/js/calendar.js?v={version}')[1]
+    assert served_js == (root/'public/assets/js/calendar.js').read_text()
+    assert 'value="2026-09-17"' in a.call('schedule_form.php?date=2026-09-17')[1]
+    post(a,'delete',{'schedule_id':september_private})
+    assert september_private not in [x['id'] for x in rows(a,'list',date='2026-09-30')]
+    assert september_private not in [x['id'] for x in rows(a,'calendar',year=2026,month='09')]
     b.call(f'api/schedules/detail.php?id={private}',status=404)
     post(b,'update',{**payload,'schedule_id':private},404)
     post(b,'delete',{'schedule_id':private},404)
@@ -176,7 +201,7 @@ try:
     for page in ['home.php','calendar.php','discover.php','schedule_form.php',f'schedule_form.php?id={sid}',f'schedule_detail.php?id={sid}']:
         response, html=a.call(page)
         assert '<script>alert(1)</script>' not in html
-        for resource in re.findall(r'(?:href|src)="([^"]+\.(?:css|js))"',html):
+        for resource in re.findall(r'(?:href|src)="([^"]+\.(?:css|js)(?:\?[^\"]*)?)"',html):
             a.call(resource[len(url.path)+1:])
     b.call(f'schedule_form.php?id={sid}&mode=custom')
     post(a,'update',{**payload,'schedule_id':sid,'status':'cancelled'})

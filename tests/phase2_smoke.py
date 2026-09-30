@@ -119,7 +119,7 @@ try:
     assert response.url == args.base + '/login.php'
     assert 'app-base-path' in html and url.path in html
     # 同じ公開パスのCSS/JSをすべて取得し、HTMLが返っていないことも検査する。
-    for resource in re.findall(r'(?:href|src)="([^"]+\.(?:css|js))"', html):
+    for resource in re.findall(r'(?:href|src)="([^"]+\.(?:css|js)(?:\?[^\"]*)?)"', html):
         assert resource.startswith(url.path + '/assets/')
         response, content = anonymous.call(resource[len(url.path) + 1:])
         assert 'text/html' not in response.headers.get('Content-Type', '')
@@ -172,7 +172,7 @@ try:
             assert '&lt;script&gt;x&lt;/script&gt;' in html
         if page.startswith('oshi_detail'):
             assert '&lt;b&gt;🩷&lt;/b&gt;' in html
-        for resource in re.findall(r'(?:href|src)="([^"]+\.(?:css|js))"', html):
+        for resource in re.findall(r'(?:href|src)="([^"]+\.(?:css|js)(?:\?[^\"]*)?)"', html):
             assert resource.startswith(url.path + '/assets/')
             a.call(resource[len(url.path) + 1:])
     # 作成者だけの編集、入力検証、重複時の取消、既存メンバー・登録関係の維持を確認する。

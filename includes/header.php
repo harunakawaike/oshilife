@@ -12,19 +12,19 @@ $isAuthPage = $isAuthPage ?? false;
     <meta name="csrf-token" content="<?= e(csrfToken()) ?>">
     <meta name="app-base-path" content="<?= e(APP_BASE_PATH) ?>">
     <title><?= e($pageTitle) ?> | Oshilife v2</title>
-    <link rel="stylesheet" href="<?= e(appUrl('assets/css/common.css')) ?>">
-    <link rel="stylesheet" href="<?= e(appUrl('assets/css/' . $pageStyle . '.css')) ?>">
+    <link rel="stylesheet" href="<?= e(assetUrl('assets/css/common.css')) ?>">
+    <link rel="stylesheet" href="<?= e(assetUrl('assets/css/' . $pageStyle . '.css')) ?>">
     <?php foreach (($extraStyles ?? []) as $style): ?>
-    <link rel="stylesheet" href="<?= e(appUrl('assets/css/' . $style . '.css')) ?>">
+    <link rel="stylesheet" href="<?= e(assetUrl('assets/css/' . $style . '.css')) ?>">
     <?php endforeach; ?>
-    <link rel="stylesheet" href="<?= e(appUrl('assets/css/theme.css')) ?>">
+    <link rel="stylesheet" href="<?= e(assetUrl('assets/css/theme.css')) ?>">
     <link id="user-theme" rel="stylesheet" href="<?= e(appUrl('theme.css.php')) ?>">
-    <script src="<?= e(appUrl('assets/js/common.js')) ?>" defer></script>
+    <script src="<?= e(assetUrl('assets/js/common.js')) ?>" defer></script>
     <?php if ($isAuthPage): ?>
-    <script src="<?= e(appUrl('assets/js/auth.js')) ?>" defer></script>
+    <script src="<?= e(assetUrl('assets/js/auth.js')) ?>" defer></script>
     <?php endif; ?>
     <?php foreach (($pageScripts ?? []) as $script): ?>
-    <script src="<?= e(appUrl('assets/js/' . $script . '.js')) ?>" defer></script>
+    <script src="<?= e(assetUrl('assets/js/' . $script . '.js')) ?>" defer></script>
     <?php endforeach; ?>
 </head>
 <body class="<?= $isAuthPage ? 'auth-layout' : 'app-layout' ?>">

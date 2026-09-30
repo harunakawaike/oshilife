@@ -15,6 +15,14 @@ function appUrl(string $path): string
     return APP_BASE_PATH . '/' . ltrim($path, '/');
 }
 
+/** ファイルの内容が変わったらURLも変え、ブラウザーに古いCSS/JSを使わせない。 */
+function assetUrl(string $path): string
+{
+    // 呼び出し元は共通ヘッダー内の固定パス。テーマなど本人別の動的CSSには使わない。
+    $version = substr(hash_file('sha256', PROJECT_ROOT . '/public/' . $path), 0, 12);
+    return appUrl($path) . '?v=' . $version;
+}
+
 /** 固定のアプリ内ページへ移動し、後続処理を止める。 */
 function redirectTo(string $path): never
 {

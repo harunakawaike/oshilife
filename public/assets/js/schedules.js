@@ -57,6 +57,28 @@ function scheduleCard(item, options = {}) {
             card.append(button, message);
         }
     }
+    if (!options.public && options.onRemoved && ((item.is_owner && item.status !== 'deleted') || (!item.is_owner && item.is_added))) {
+        const remove = scheduleElement('button', 'button secondary small', item.is_owner ? '予定を削除' : 'カレンダーから外す');
+        remove.type = 'button';
+        remove.setAttribute('aria-label', `${item.title}を${item.is_owner ? '削除' : 'カレンダーから外す'}`);
+        const message = scheduleElement('p', 'form-message');
+        message.setAttribute('role', 'alert');
+        remove.addEventListener('click', async () => {
+            const explanation = item.is_owner
+                ? `「${item.title}」を削除しますか？${item.visibility === 'public' ? '取り込み済みのユーザーには削除されたことが表示されます。' : ''}`
+                : `「${item.title}」を自分のカレンダーから外しますか？自分用の編集内容も削除されます。共有元は残ります。`;
+            if (!window.confirm(explanation)) return;
+            remove.disabled = true; message.textContent = '処理しています…';
+            try {
+                // 共有元の削除と本人の取り込み解除は別API。本人確認はサーバー側でも行う。
+                const action = item.is_owner ? 'delete' : 'remove-from-calendar';
+                await apiRequest(`api/schedules/${action}.php`, 'POST', { schedule_id: item.id });
+                card.remove();
+                await options.onRemoved();
+            } catch (error) { message.textContent = error.message; remove.disabled = false; }
+        });
+        card.append(remove, message);
+    }
     return card;
 }
 /** 空一覧も読み込み失敗と区別して表示する。 */
