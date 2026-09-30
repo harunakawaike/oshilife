@@ -143,6 +143,9 @@ function findPublicSchedules(PDO $pdo, int $userId, array $filters, bool $unadde
             AND EXISTS (SELECT 1 FROM user_oshis uo WHERE uo.user_id=viewer.id AND uo.oshi_id=s.oshi_id)
             AND NOT EXISTS (SELECT 1 FROM user_schedules mine WHERE mine.user_id=viewer.id AND mine.schedule_id=s.id)';
     }
+    // ライブ管理の連携公演と、従来のライブカテゴリ予定を同じ新着欄へ分類する。
+    if ($unadded && ($filters['kind'] ?? 'all') === 'live') $where .= " AND (linked_live.id IS NOT NULL OR s.category='live')";
+    if ($unadded && ($filters['kind'] ?? 'all') === 'schedule') $where .= " AND linked_live.id IS NULL AND s.category<>'live'";
     foreach (['oshi_id' => 's.oshi_id', 'category' => 's.category', 'date' => 's.schedule_date'] as $key => $column) {
         if (!empty($filters[$key])) { $where .= ' AND ' . $column . '=:' . $key; $parameters[$key] = $filters[$key]; }
     }

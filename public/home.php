@@ -5,8 +5,8 @@ require_once __DIR__ . '/../middleware/auth.php';
 $user = requireAuth();
 require_once PROJECT_ROOT . '/app/repositories/oshi_repository.php';
 $myOshis = findMyOshis(database(), (int) $user['id']);
-$pageScripts = ['schedules', 'home', 'monthly_summary', 'lives'];
-$extraStyles = ['schedules', 'feedback', 'lives'];
+$pageScripts = ['schedules', 'home', 'monthly_summary', 'lives', 'money'];
+$extraStyles = ['schedules', 'feedback', 'lives', 'money'];
 $pageTitle = 'ホーム';
 $pageStyle = 'home';
 $activePage = 'home';
@@ -19,8 +19,11 @@ require PROJECT_ROOT . '/includes/header.php';
 <p id="home-filter-status" class="caption" aria-live="polite">すべての推しの予定を表示します。</p>
 <div class="dashboard-grid">
 <section class="today-card"><div class="section-heading"><h2>今日の予定</h2><a href="<?= e(appUrl('calendar.php')) ?>">カレンダー →</a></div><p class="date-label"><?= e(date('n月j日')) ?></p><div id="home-today" class="schedule-stack" data-today="<?= e(date('Y-m-d')) ?>" aria-live="polite"><p>予定を読み込んでいます…</p></div><a class="text-button" href="<?= e(appUrl('schedule_form.php')) ?>">＋ 予定を登録</a></section>
-<section class="section"><div class="section-heading"><h2>新着の公開予定 <span id="unadded-count" class="tag">0件</span></h2><a href="<?= e(appUrl('discover.php')) ?>">見つける →</a></div><div id="home-unadded" class="schedule-stack" aria-live="polite"><p>公開予定を読み込んでいます…</p></div><button id="home-more" class="button secondary small" type="button" hidden>さらに表示</button><p class="caption">自分の推しの予定のうち、まだカレンダーに追加していないものが並びます。</p></section>
+<div class="home-discovery">
+<section class="section"><div class="section-heading"><h2>新着の公開予定 <span id="unadded-count" class="tag" hidden></span></h2><a href="<?= e(appUrl('discover.php')) ?>">見つける →</a></div><div id="home-unadded" class="schedule-stack" aria-live="polite"><p>公開予定を読み込んでいます…</p></div><p id="home-schedule-message" class="caption" role="status"></p><button id="home-more" class="button secondary small" type="button" hidden>さらに表示</button><p class="caption">自分の推しの公開予定のうち、ライブ以外で未追加のものが並びます。</p></section>
+<section class="section"><div class="section-heading"><h2>新着のライブ情報 <span id="unadded-live-count" class="tag" hidden></span></h2><a href="<?= e(appUrl('live.php')) ?>">ライブ一覧 →</a></div><div id="home-unadded-lives" class="schedule-stack" aria-live="polite"><p>ライブ情報を読み込んでいます…</p></div><p id="home-live-message" class="caption" role="status"></p><button id="home-live-more" class="button secondary small" type="button" hidden>さらに表示</button><p class="caption">自分の推しのライブ情報のうち、まだカレンダーに追加していないものが並びます。</p></section>
+</div>
 <section class="section"><div class="section-heading"><h2>次のライブ</h2><a href="<?= e(appUrl('live.php')) ?>">一覧 →</a></div><div id="home-next-live" aria-live="polite"><p>読み込んでいます…</p></div></section>
-<div class="two-cards"><section class="card funds"><span class="small-icon">◌</span><h2>推し活資金</h2><strong>¥30,000</strong><p>次の楽しみへ · 表示例</p></section><section class="card thanks"><span class="small-icon" aria-hidden="true">♡</span><h2>最近のありがとう</h2><div id="monthly-thanks" class="thanks-summary" data-year="<?= e(date('Y')) ?>" data-month="<?= e(date('m')) ?>" aria-live="polite"><p>今月の共有状況を読み込んでいます…</p></div><a class="text-button" href="<?= e(appUrl('corrections.php')) ?>">届いた修正提案を見る →</a></section></div>
+<div class="two-cards"><section class="card funds"><span class="small-icon" aria-hidden="true">💰</span><h2>推し活資金</h2><div id="home-money" data-year="<?= e(date('Y')) ?>" aria-live="polite"><p>資金を読み込んでいます…</p></div></section><section class="card thanks"><span class="small-icon" aria-hidden="true">♡</span><h2>最近のありがとう</h2><div id="monthly-thanks" class="thanks-summary" data-year="<?= e(date('Y')) ?>" data-month="<?= e(date('m')) ?>" aria-live="polite"><p>今月の共有状況を読み込んでいます…</p></div><a class="text-button" href="<?= e(appUrl('corrections.php')) ?>">届いた修正提案を見る →</a></section></div>
 </div>
 <?php require PROJECT_ROOT . '/includes/footer.php'; ?>

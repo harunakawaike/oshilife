@@ -17,7 +17,8 @@ function runLiveApi(string $route): void
         if (!in_array($period,['all','upcoming','past'],true)) throw new ScheduleOperationException('期間が正しくありません。',422);
         if ($period==='upcoming') $where.=' AND s.schedule_date>=CURRENT_DATE';
         if ($period==='past') $where.=' AND s.schedule_date<CURRENT_DATE';
-        if ($route==='lives/next') $where.=" AND u.id IS NOT NULL AND s.schedule_date>=CURRENT_DATE AND l.status IN ('scheduled','postponed')";
+        // ホームには本人が落選した公演を出さない。共有の公演情報や一覧は残す。
+        if ($route==='lives/next') $where.=" AND u.id IS NOT NULL AND u.lottery_status<>'lost' AND s.schedule_date>=CURRENT_DATE AND l.status IN ('scheduled','postponed')";
         $page=positiveOshiId($raw['page']??1);
         if ($page===null || $page>10000) throw new ScheduleOperationException('ページ番号が正しくありません。',422);
         $rows=liveRows($pdo,$userId,$where,$values,$route==='lives/next'?1:31,($page-1)*30);

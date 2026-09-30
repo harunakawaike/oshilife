@@ -1,7 +1,13 @@
 <?php
 /** trip_detail.php の役割：本人の遠征に属する公演・交通・ホテル・TODO・会場を一画面にまとめる。 */
 require_once __DIR__.'/../app/helpers/live_view.php';
+require_once PROJECT_ROOT.'/app/repositories/money_repository.php';
 $trip=findTripDetail(database(),(int)$user['id'],livePageId());$live=$trip['live'];$pageTitle=$trip['trip_name'];
+// 元予約ごとの反映済み支出IDを本人限定で読み、二度目は編集へ案内する。
+$moneyLinks=[];
+foreach (liveQuery(database(), 'SELECT id,source_type,source_id FROM expenses WHERE user_id=? AND trip_id=?', [(int)$user['id'],$trip['id']])->fetchAll() as $expense) {
+    $moneyLinks[$expense['source_type'].':'.$expense['source_id']]=$expense['id'];
+}
 require PROJECT_ROOT.'/includes/header.php';
 ?>
 <a href="<?= e(appUrl('live_detail.php?id='.$live['id'])) ?>">← ライブ詳細</a>
@@ -16,6 +22,8 @@ require PROJECT_ROOT.'/includes/header.php';
 <?php if ($kind==='transport'): ?><h3><?= e($item['transport_type']==='other'?$item['transport_type_other']:TRANSPORT_TYPES[$item['transport_type']]) ?></h3><p><?= e($item['departure_place'].' → '.$item['arrival_place']) ?></p><p><?= e(substr($item['departure_at'],0,16).' → '.substr($item['arrival_at'],0,16)) ?></p>
 <?php else: ?><h3><?= e($item['hotel_name']) ?></h3><p><?= e(substr($item['check_in_at'],0,16).' → '.substr($item['check_out_at'],0,16)) ?></p><p><?= e($item['address']) ?></p><?php if ($item['url']): ?><a href="<?= e($item['url']) ?>" target="_blank" rel="noopener noreferrer">予約ページを見る ↗</a><?php endif; endif; ?>
 <?php if ($item['amount']!==null): ?><p>金額 ¥<?= e(number_format((float)$item['amount'],2)) ?></p><?php endif; ?><p class="live-note"><?= e($item['note']) ?></p>
+<?php $sourceType=$kind==='transport'?'transportation':'accommodation'; $expenseId=$moneyLinks[$sourceType.':'.$item['id']]??null; ?>
+<p><a class="button secondary small" href="<?= e(appUrl($expenseId?'expense_form.php?id='.$expenseId:'expense_form.php?source_type='.$sourceType.'&source_id='.$item['id'])) ?>"><?= $expenseId?'登録済みの支出を編集':'お金管理に反映' ?></a></p>
 <div class="live-actions"><a href="<?= e(appUrl('travel_form.php?trip_id='.$trip['id'].'&kind='.$kind.'&id='.$item['id'])) ?>">編集</a><button class="button secondary small" type="button" data-delete-api="trips/<?= e($kind) ?>/delete" data-id="<?= (int)$item['id'] ?>" data-trip-id="<?= (int)$trip['id'] ?>">削除</button></div></article>
 <?php endforeach; ?></div></section>
 <?php endforeach; liveTodoSection((int)$user['id'],(int)$live['id']); ?>

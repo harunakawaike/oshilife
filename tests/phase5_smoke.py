@@ -122,11 +122,32 @@ try:
     assert len(get(a,'lives/list',oshi_id=oid,period='upcoming')['lives'])==2
     assert get(a,'lives/list',oshi_id=oid,period='past')['lives']==[]
     assert get(b,'lives/next',oshi_id=oid)['live'] is None
+    # 新着は通常予定とライブをSQL側で分け、分類ごとに正しい件数を返す。
+    regular=post(a,'schedules/create',{'oshi_id':oid,'title':'通常予定','schedule_date':future,'start_time':'18:00','end_time':'19:00','is_all_day':False,'category':'tv','visibility':'public','note':''},201)['schedule']['id']
+    legacy=post(a,'schedules/create',{'oshi_id':oid,'title':'従来ライブ','schedule_date':future,'start_time':'12:00','end_time':'13:00','is_all_day':False,'category':'live','visibility':'public','note':''},201)['schedule']['id']
+    fresh=get(b,'schedules/unadded',oshi_id=oid,kind='schedule')
+    assert fresh['total']==1 and int(fresh['schedules'][0]['id'])==int(regular)
+    fresh=get(b,'schedules/unadded',oshi_id=oid,kind='live')
+    assert fresh['total']==3 and {int(row['id']) for row in fresh['schedules']}=={int(sid),int(second['schedule_id']),int(legacy)}
+    assert get(a,'schedules/unadded',oshi_id=oid,kind='live')['total']==0
+    b.call('api/schedules/unadded.php?kind=invalid',status=422)
     status={'live_event_id':lid,'application_status':'applied','lottery_status':'won','trip_type':'local','note':'B個人メモ','user_id':aid}
     post(b,'lives/status/update',status)
+    assert all(int(row['id'])!=int(sid) for row in get(b,'schedules/unadded',oshi_id=oid,kind='live')['schedules'])
     assert get(b,'lives/status',live_event_id=lid)['status']['note']=='B個人メモ'
     assert get(a,'lives/status',live_event_id=lid,user_id=bid)['status']['note']==''
     assert get(b,'lives/next',oshi_id=oid)['live']['days_until']==18
+    # 落選は本人のホームだけから除外し、一覧や他のユーザーの表示は残す。
+    post(b,'lives/status/update',{**status,'lottery_status':'lost'})
+    assert get(b,'lives/next',oshi_id=oid)['live'] is None
+    assert any(int(row['id'])==int(lid) for row in get(b,'lives/list',oshi_id=oid)['lives'])
+    assert int(get(a,'lives/next',oshi_id=oid)['live']['id'])==int(lid)
+    # 後続の参加公演があれば、落選公演を飛ばして次の候補を表示する。
+    post(b,'lives/status/update',{**status,'live_event_id':second['id'],'lottery_status':'pending','trip_type':None})
+    assert int(get(b,'lives/next',oshi_id=oid)['live']['id'])==int(second['id'])
+    post(b,'lives/status/update',{**status,'live_event_id':second['id'],'lottery_status':'lost','trip_type':None})
+    post(b,'lives/status/update',status)
+    assert int(get(b,'lives/next',oshi_id=oid)['live']['id'])==int(lid)
     todos=get(b,'lives/todos/list',live_event_id=lid)['todos'];assert len(todos)==6
     assert get(a,'lives/todos/list',live_event_id=lid,user_id=bid)['todos']==[]
     tid=todos[0]['id']
