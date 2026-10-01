@@ -1,7 +1,7 @@
 <?php
 /** money_repository.php の役割：本人の積立・支出の取得と、年間・月間・分類別集計を担当する。 */
 declare(strict_types=1);
-require_once __DIR__.'/live_repository.php';
+require_once __DIR__.'/event_repository.php';
 require_once __DIR__.'/../../config/money.php';
 /** 金額の小数を整数の100分の1円へ変換し、残高の計算で浮動小数の誤差を避ける。 */
 function moneyCents(string $amount): int
@@ -38,7 +38,7 @@ function moneyYearTotals(PDO $pdo, string $table, int $userId, int $year, ?int $
     $end = sprintf('%04d-01-01', $year + 1);
     $values += ['start'=>$start, 'end'=>$end];
     // テーブル名・列名はプログラム内の固定値。値はliveQueryのprepare/executeで束縛する。
-    $row = liveQuery($pdo, "SELECT
+    $row = eventQuery($pdo, "SELECT
         COALESCE(SUM(CASE WHEN m.$date<:start THEN m.amount ELSE 0 END),0) AS past,
         COALESCE(SUM(m.amount),0) AS total
         FROM $table m WHERE $where AND m.$date<:end", $values)->fetch();
@@ -53,7 +53,7 @@ function moneyDashboard(PDO $pdo, int $userId, int $year, ?int $oshiId): array
     $carry = $saved['past'] - $spent['past'];
     [$where, $values] = moneyScope($userId, $oshiId);
     $values += ['start'=>sprintf('%04d-01-01',$year), 'end'=>sprintf('%04d-01-01',$year+1)];
-    $eligible = liveQuery($pdo, "SELECT COALESCE(SUM(m.amount),0) FROM expenses m
+    $eligible = eventQuery($pdo, "SELECT COALESCE(SUM(m.amount),0) FROM expenses m
         WHERE $where AND m.expense_date>=:start AND m.expense_date<:end AND m.special_effect_eligible=1", $values)->fetchColumn();
     return [
         'year'=>$year, 'oshi_id'=>$oshiId, 'carryover'=>moneyDecimal($carry),
@@ -70,7 +70,7 @@ function moneyBreakdown(PDO $pdo, int $userId, int $year, ?int $oshiId, string $
     [$where, $values] = moneyScope($userId, $oshiId);
     $values += ['start'=>sprintf('%04d-01-01',$year), 'end'=>sprintf('%04d-01-01',$year+1)];
     $expression = ['monthly'=>'MONTH(m.expense_date)', 'categories'=>'m.category', 'by-oshi'=>'m.oshi_id'][$kind];
-    $rows = liveQuery($pdo, "SELECT $expression AS item_key, SUM(m.amount) AS amount
+    $rows = eventQuery($pdo, "SELECT $expression AS item_key, SUM(m.amount) AS amount
         FROM expenses m WHERE $where AND m.expense_date>=:start AND m.expense_date<:end
         GROUP BY $expression ORDER BY $expression", $values)->fetchAll();
     if ($kind === 'monthly') {
@@ -84,7 +84,7 @@ function moneyBreakdown(PDO $pdo, int $userId, int $year, ?int $oshiId, string $
         return $result;
     }
     $names = [];
-    foreach (liveQuery($pdo, 'SELECT id,name,emoji FROM oshis')->fetchAll() as $oshi) $names[$oshi['id']] = $oshi['emoji'].' '.$oshi['name'];
+    foreach (eventQuery($pdo, 'SELECT id,name,emoji FROM oshis')->fetchAll() as $oshi) $names[$oshi['id']] = $oshi['emoji'].' '.$oshi['name'];
     foreach ($rows as &$row) $row = ['oshi_id'=>$row['item_key'], 'label'=>$row['item_key']===null?'共通・未指定':($names[$row['item_key']]??'推し'), 'amount'=>$row['amount']];
     unset($row);
     usort($rows, fn($a,$b)=>strcmp($a['label'],$b['label']));
@@ -100,7 +100,7 @@ function moneySpecialEffects(string $eligible): array
 /** IDだけでなく本人IDを必須条件にするので、他人のお金情報は取得できない。 */
 function findMoneyRecord(PDO $pdo, string $table, int $userId, int $id, bool $lock = false): array
 {
-    return liveQuery($pdo, "SELECT * FROM $table WHERE id=? AND user_id=?".($lock?' FOR UPDATE':''), [$id,$userId])->fetch()
+    return eventQuery($pdo, "SELECT * FROM $table WHERE id=? AND user_id=?".($lock?' FOR UPDATE':''), [$id,$userId])->fetch()
         ?: throw new ScheduleOperationException('対象の記録が見つかりません。',404);
 }
 /** 一覧も本人・対象年・推しを限定し、編集画面へのIDだけを返す。 */
@@ -110,8 +110,8 @@ function listMoneyRecords(PDO $pdo, string $table, int $userId, int $year, ?int 
     $date = $table==='savings'?'saving_date':'expense_date';
     $values += ['start'=>sprintf('%04d-01-01',$year),'end'=>sprintf('%04d-01-01',$year+1)];
     $where .= " AND m.$date>=:start AND m.$date<:end";
-    $total = (int)liveQuery($pdo, "SELECT COUNT(*) FROM $table m WHERE $where", $values)->fetchColumn();
-    $rows = liveQuery($pdo, "SELECT m.*,o.name AS oshi_name,o.emoji AS oshi_emoji FROM $table m
+    $total = (int)eventQuery($pdo, "SELECT COUNT(*) FROM $table m WHERE $where", $values)->fetchColumn();
+    $rows = eventQuery($pdo, "SELECT m.*,o.name AS oshi_name,o.emoji AS oshi_emoji FROM $table m
         LEFT JOIN oshis o ON o.id=m.oshi_id WHERE $where ORDER BY m.$date DESC,m.id DESC LIMIT 30 OFFSET ".(($page-1)*30), $values)->fetchAll();
     return ['items'=>$rows,'total'=>$total,'has_more'=>$page*30<$total];
 }
@@ -122,33 +122,32 @@ function moneySource(PDO $pdo, int $userId, string $type, int $id, bool $lock = 
         throw new ScheduleOperationException('反映元が正しくありません。',422);
     }
     if ($type === 'live_ticket') {
-        // source_idは共有公演IDではなく、本人のuser_live_status.id。
-        $row = liveQuery($pdo,'SELECT * FROM user_live_status WHERE id=? AND user_id=?'.($lock?' FOR UPDATE':''),[$id,$userId])->fetch();
+        // source_idは共有公演IDではなく、本人のuser_event_status.id。
+        $row = eventQuery($pdo,'SELECT * FROM user_event_status WHERE id=? AND user_id=?'.($lock?' FOR UPDATE':''),[$id,$userId])->fetch();
         if (!$row) throw new ScheduleOperationException('本人のチケット情報が見つかりません。',404);
-        $todo = liveQuery($pdo,"SELECT is_completed FROM todos WHERE user_id=? AND live_event_id=? AND template_key='payment' AND deleted_at IS NULL".($lock?' FOR UPDATE':''),[$userId,$row['live_event_id']])->fetch();
-        $live = findLive($pdo,$userId,(int)$row['live_event_id']);
+        $event = findEvent($pdo,$userId,(int)$row['event_id']);
         $amount = $row['ticket_amount'];
-        $paid = $todo && (bool)$todo['is_completed'] && $row['ticket_payment_status']==='paid';
-        $ready = $row['lottery_status']==='won' && $paid && moneyCents($amount??'0')>0;
+        $paid = $row['ticket_payment_status']==='paid';
+        $ready = $row['participation_status']==='confirmed' && $paid && moneyCents($amount??'0')>0;
         $expenseId = $row['ticket_expense_id'];
-        $title = mb_substr($live['title'],0,110,'UTF-8').' '.$live['event_date'].' チケット';
+        $title = mb_substr($event['title'],0,110,'UTF-8').' '.$event['event_date'].' チケット';
         $date = $row['ticket_paid_date']??date('Y-m-d');
-        $tripId = $live['trip_id'];
-        $payment = $paid?'paid':'unpaid';
+        $tripId = $event['trip_id'];
+        $payment = $amount!==null && moneyCents($amount)===0 ? 'not_required' : ($paid?'paid':'unpaid');
         $reservation = null;
-        $reason = '当選・チケット金額が0円より大きい・入金TODO完了の3条件を確認してください。';
+        $reason = $payment==='not_required' ? '0円のため、お金管理への反映は不要です。' : '参加確定・金額が0円より大きい・支払い済みの3条件を確認してください。';
     } else {
         $table = $type==='transportation'?'transportations':'accommodations';
-        $row = liveQuery($pdo,"SELECT item.*,t.live_event_id FROM $table item JOIN trips t ON t.id=item.trip_id WHERE item.id=? AND t.user_id=?",[$id,$userId])->fetch();
+        $row = eventQuery($pdo,"SELECT item.*,t.event_id FROM $table item JOIN trips t ON t.id=item.trip_id WHERE item.id=? AND t.user_id=?",[$id,$userId])->fetch();
         if (!$row) throw new ScheduleOperationException('反映できる予約が見つかりません。',404);
         if ($lock) {
             // 予約編集と同じ親→子の順番でロックし、確認後の支払い取消も再検査する。
             requireOwnTrip($pdo,$userId,(int)$row['trip_id'],true);
-            $locked = liveQuery($pdo,"SELECT * FROM $table WHERE id=? AND trip_id=? FOR UPDATE",[$id,$row['trip_id']])->fetch();
+            $locked = eventQuery($pdo,"SELECT * FROM $table WHERE id=? AND trip_id=? FOR UPDATE",[$id,$row['trip_id']])->fetch();
             if (!$locked) throw new ScheduleOperationException('反映できる予約が見つかりません。',404);
-            $row = $locked + ['live_event_id'=>$row['live_event_id']];
+            $row = $locked + ['event_id'=>$row['event_id']];
         }
-        $live = findLive($pdo,$userId,(int)$row['live_event_id']);
+        $event = findEvent($pdo,$userId,(int)$row['event_id']);
         $amount = $row['amount'];
         $payment = $row['payment_status'];
         $reservation = $row['reservation_status'];
@@ -161,10 +160,10 @@ function moneySource(PDO $pdo, int $userId, string $type, int $id, bool $lock = 
         $tripId = $row['trip_id'];
         $reason = '予約済み・支払い済み・金額が0円より大きい状態で反映できます。';
     }
-    $expense = $expenseId===null ? false : liveQuery($pdo,'SELECT amount FROM expenses WHERE id=? AND user_id=?',[$expenseId,$userId])->fetch();
+    $expense = $expenseId===null ? false : eventQuery($pdo,'SELECT amount FROM expenses WHERE id=? AND user_id=?',[$expenseId,$userId])->fetch();
     return [
         'title'=>mb_substr($title,0,150,'UTF-8'),'amount'=>$amount,'category'=>$type,
-        'expense_date'=>$date,'oshi_id'=>$live['oshi_id'],'live_event_id'=>$live['id'],'trip_id'=>$tripId,
+        'expense_date'=>$date,'oshi_id'=>$event['oshi_id'],'event_id'=>$event['id'],'trip_id'=>$tripId,
         'note'=>$type==='live_ticket'?'':$row['note'],'source_type'=>$type,'source_id'=>$id,
         'special_effect_eligible'=>$type==='live_ticket',
         'reservation_status'=>$reservation,'payment_status'=>$payment,
@@ -177,7 +176,7 @@ function moneySource(PDO $pdo, int $userId, string $type, int $id, bool $lock = 
 /** 保存した支出IDを元データへ記録する。呼び出し元のトランザクションで一緒に確定する。 */
 function linkMoneySource(PDO $pdo,string $type,int $sourceId,int $expenseId): void
 {
-    $table = ['live_ticket'=>'user_live_status','transportation'=>'transportations','accommodation'=>'accommodations'][$type];
+    $table = ['live_ticket'=>'user_event_status','transportation'=>'transportations','accommodation'=>'accommodations'][$type];
     $column = $type==='live_ticket'?'ticket_expense_id':'expense_id';
-    liveQuery($pdo,"UPDATE $table SET $column=? WHERE id=?",[$expenseId,$sourceId]);
+    eventQuery($pdo,"UPDATE $table SET $column=? WHERE id=?",[$expenseId,$sourceId]);
 }

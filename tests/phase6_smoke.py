@@ -74,11 +74,11 @@ def db(mode):
     if($argv[2]==='cleanup') {
         $p->beginTransaction();
         foreach($ids as $id) {
-            foreach(['expenses','savings','todos','trips','user_live_status','user_schedules'] as $table) { $s=$p->prepare('DELETE FROM '.$table.' WHERE user_id=?');$s->execute([$id]); }
+            foreach(['expenses','savings','todos','trips','user_event_status','user_schedules'] as $table) { $s=$p->prepare('DELETE FROM '.$table.' WHERE user_id=?');$s->execute([$id]); }
             foreach(['notifications','reactions','correction_requests'] as $table) { $s=$p->prepare('DELETE child FROM '.$table.' child JOIN schedules s ON s.id=child.schedule_id WHERE s.created_by_user_id=?');$s->execute([$id]); }
         }
         foreach($ids as $id) {
-            $s=$p->prepare('DELETE l FROM live_events l JOIN schedules s ON s.id=l.schedule_id WHERE s.created_by_user_id=?');$s->execute([$id]);
+            $s=$p->prepare('DELETE l FROM events l JOIN schedules s ON s.id=l.schedule_id WHERE s.created_by_user_id=?');$s->execute([$id]);
             $s=$p->prepare('DELETE FROM schedules WHERE created_by_user_id=?');$s->execute([$id]);
             $s=$p->prepare('DELETE FROM user_oshis WHERE user_id=?');$s->execute([$id]);
         }
@@ -87,7 +87,7 @@ def db(mode):
         foreach($ids as $id) {$s=$p->prepare('DELETE FROM users WHERE id=?');$s->execute([$id]);}
         $p->commit();
     }
-    $out=[];foreach(['users','user_settings','oshis','members','user_oshis','schedules','schedule_members','schedule_sources','user_schedules','correction_requests','reactions','notifications','venues','live_events','user_live_status','todos','trips','transportations','accommodations','savings','expenses'] as $table) {
+    $out=[];foreach(['users','user_settings','oshis','members','user_oshis','schedules','schedule_members','schedule_sources','user_schedules','correction_requests','reactions','notifications','venues','events','user_event_status','todos','trips','transportations','accommodations','savings','expenses'] as $table) {
         $rows=$p->query('SELECT * FROM '.$table.' ORDER BY id')->fetchAll();$out[$table]=['count'=>count($rows),'hash'=>hash('sha256',serialize($rows))];
     }echo json_encode($out);
     '''
@@ -105,7 +105,7 @@ a,b,anonymous=Client(),Client(),Client();before=db('snapshot')
 def amount(value):return Decimal(str(value))
 def dashboard(client=a,**params):return get(client,'money/dashboard',year=year,**params)
 def saving(value,date,oshi=None,**extra):return {'amount':str(value),'saving_date':date,'oshi_id':oshi,'note':'積立メモ',**extra}
-def expense(value,date,oshi=None,category='goods',**extra):return {'title':'支出 <script>文字</script>','amount':str(value),'expense_date':date,'oshi_id':oshi,'category':category,'live_event_id':None,'trip_id':None,'note':'本人の支出メモ',**extra}
+def expense(value,date,oshi=None,category='goods',**extra):return {'title':'支出 <script>文字</script>','amount':str(value),'expense_date':date,'oshi_id':oshi,'category':category,'event_id':None,'trip_id':None,'note':'本人の支出メモ',**extra}
 try:
     for path in ['dashboard','savings/list','expenses/list','monthly','categories','by-oshi','special-effects','source']:
         anonymous.call('api/money/'+path+'.php',status=401)
@@ -163,9 +163,9 @@ try:
     assert amount(dashboard()['expenses'])==58000
     assert amount(get(a,'money/dashboard',year=year+1)['balance'])==61950
     vid=post(a,'venues/create',{'name':'Phase6-'+key,'prefecture':'東京都'},201)['id']
-    live=post(a,'lives/create',{'oshi_id':oid,'title':'Phase6 Live','venue_id':vid,'event_date':today,'status':'scheduled','start_time':'18:00','open_time':'17:00','end_time':'20:00'},201)['live']
-    lid=live['id'];post(a,'lives/status/update',{'live_event_id':lid,'application_status':'applied','lottery_status':'won','trip_type':'trip','note':''})
-    trip=post(a,'trips/create',{'live_event_id':lid,'trip_name':'本人の遠征','departure_date':today,'return_date':today,'note':''})['id']
+    live=post(a,'events/create',{'oshi_id':oid,'title':'Phase6 Live','venue_id':vid,'event_date':today,'status':'scheduled','start_time':'18:00','open_time':'17:00','end_time':'20:00'},201)['event']
+    lid=live['id'];post(a,'events/status/update',{'event_id':lid,'application_status':'applied','lottery_status':'won','trip_type':'trip','note':''})
+    trip=post(a,'trips/create',{'event_id':lid,'trip_name':'本人の遠征','departure_date':today,'return_date':today,'note':''})['id']
     transport={'trip_id':trip,'transport_type':'shinkansen','departure_place':'東京','arrival_place':'大阪','departure_at':today+'T08:00','arrival_at':today+'T11:00','amount':'24000.50','reservation_status':'reserved','payment_status':'paid','note':'交通メモ'}
     transportId=post(a,'trips/transport/create',transport)['id']
     hotel={'trip_id':trip,'hotel_name':'ホテル','check_in_at':today+'T15:00','check_out_at':(now.date()+timedelta(days=1)).isoformat()+'T10:00','amount':'8000','reservation_status':'reserved','payment_status':'paid','url':'https://example.com','note':'ホテルメモ'}
@@ -197,10 +197,10 @@ try:
     post(a,'money/expenses/delete',{'id':imported[0]['id']})
     source=get(a,'money/source',source_type='transportation',source_id=transportId)['source'];assert source['expense_id'] is None
     post(a,'money/expenses/create',source,201)
-    post(a,'money/expenses/create',expense(1,today,oid2,live_event_id=lid),422)
-    post(b,'money/expenses/create',expense(1,today,oid,live_event_id=lid,trip_id=trip),404)
-    ticket=post(a,'money/expenses/create',expense(100,today,oid,'live_ticket',live_event_id=lid,trip_id=trip),201)['record']
-    assert int(ticket['live_event_id'])==int(lid)
+    post(a,'money/expenses/create',expense(1,today,oid2,event_id=lid),422)
+    post(b,'money/expenses/create',expense(1,today,oid,event_id=lid,trip_id=trip),404)
+    ticket=post(a,'money/expenses/create',expense(100,today,oid,'live_ticket',event_id=lid,trip_id=trip),201)['record']
+    assert int(ticket['event_id'])==int(lid)
     # ランキングではなく名前順の本人内訳。12ヶ月とカテゴリの合計も年間額に一致する。
     result=dashboard()
     assert sum(amount(row['amount']) for row in result['monthly'])==amount(result['expenses'])

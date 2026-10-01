@@ -1,15 +1,15 @@
-/** home.js の役割：今日の予定と、公開予定／ライブに分けた未追加の新着情報を表示する。 */
+/** home.js の役割：今日の予定と、公開予定／イベントに分けた未追加の新着情報を表示する。 */
 'use strict';
 let homeDayRequest = 0;
 const homeFeeds = {
     schedule: {list: 'home-unadded', count: 'unadded-count', more: 'home-more', message: 'home-schedule-message', label: '公開予定', page: 1, request: 0},
-    live: {list: 'home-unadded-lives', count: 'unadded-live-count', more: 'home-live-more', message: 'home-live-message', label: 'ライブ情報', page: 1, request: 0},
+    event: {list: 'home-unadded-events', count: 'unadded-event-count', more: 'home-event-more', message: 'home-event-message', label: 'イベント情報', page: 1, request: 0},
 };
 /** 推しIDを共通で取得し、URLの値として安全に渡す。 */
 function homeOshiFilter() {
     return encodeURIComponent(document.getElementById('home-oshi').value || 'all');
 }
-/** 今日の予定は公開・非公開・ライブを含めて従来どおり表示する。 */
+/** 今日の予定は公開・非公開・イベントを含めて従来どおり表示する。 */
 async function loadHomeDay() {
     const request = ++homeDayRequest;
     const list = document.getElementById('home-today');
@@ -60,8 +60,8 @@ async function loadHomeFeed(kind, append = false) {
 /** 推し変更とカレンダー追加後は全欄を更新する。片方が失敗しても他方は表示できる。 */
 async function loadHomeSchedules() {
     const select = document.getElementById('home-oshi');
-    document.getElementById('home-filter-status').textContent = `${select.selectedOptions[0].textContent}の予定・ライブ情報を表示しています。`;
-    await Promise.all([loadHomeDay(), loadHomeFeed('schedule'), loadHomeFeed('live')]);
+    document.getElementById('home-filter-status').textContent = `${select.selectedOptions[0].textContent}の予定・イベント情報を表示しています。`;
+    await Promise.all([loadHomeDay(), loadHomeFeed('schedule'), loadHomeFeed('event')]);
 }
 document.getElementById('home-oshi').addEventListener('change', () => loadHomeSchedules());
 for (const [kind, feed] of Object.entries(homeFeeds)) {

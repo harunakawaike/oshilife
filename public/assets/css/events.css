@@ -1,0 +1,22 @@
+/* イベント・当落・遠征の画面。利用者が選んだテーマ変数を使い、狭い画面は一列にする。 */
+.event-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;margin:20px 0}
+.event-field{display:flex;flex-direction:column;gap:8px;min-width:0;font-weight:600}
+.event-field input,.event-field select,.event-field textarea{width:100%;min-width:0;box-sizing:border-box;font:inherit;padding:12px;border:1px solid var(--border,#ccc);border-radius:12px;background:var(--surface,#fff);color:var(--ink)}
+.event-wide{grid-column:1/-1}.event-section{margin:24px 0}.event-section h1{font-size:clamp(1.6rem,4vw,2.4rem)}
+.event-section small{font-size:.75rem;font-weight:400}.event-actions,.event-time{display:flex;gap:16px;flex-wrap:wrap;align-items:center}.event-actions{margin-top:16px}
+.event-time span{padding:10px 0}.event-note{white-space:pre-wrap;overflow-wrap:anywhere}.event-date{font-size:1.15rem;font-weight:600}
+.event-state{display:inline-block;padding:4px 12px;border-radius:20px;background:var(--pink);font-size:.85rem}
+.state-cancelled,.state-postponed{font-weight:700;border:2px solid currentColor}.state-cancelled::before{content:'中止 · ';display:none}
+.event-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}.event-grid .event-section{margin:0}.event-countdown{display:block;font-size:2rem;margin:16px 0}
+.travel-list{display:grid;gap:16px}.travel-card{padding:20px 0;border-bottom:1px solid var(--border,#ddd);overflow-wrap:anywhere}
+.todo-row{display:flex;gap:20px;align-items:center;padding:16px 0;border-bottom:1px solid var(--border,#ddd)}.todo-check{display:flex;gap:8px;white-space:nowrap;align-items:center}.todo-check input{width:20px;height:20px;accent-color:var(--accent-text)}
+.todo-edit{display:grid;grid-template-columns:minmax(0,2fr) minmax(120px,1fr);gap:12px;flex:1;min-width:0}.todo-edit .event-actions,.todo-edit .event-message{grid-column:1/-1;margin:0}
+.event-message{overflow-wrap:anywhere}.event-duplicates{display:grid;gap:14px}.event-section details{margin-top:20px}.event-section summary{cursor:pointer;padding:12px 0;font-weight:600}#home-next-event .card{margin:0;border:0;box-shadow:none;padding:0;background:transparent}
+@media(max-width:640px){.event-fields,.event-grid{grid-template-columns:1fr}.todo-row{align-items:flex-start;flex-direction:column}.todo-edit{width:100%;grid-template-columns:1fr}.event-actions .button{max-width:100%}.event-section .section-heading{flex-wrap:wrap;gap:14px}}
+[hidden]{display:none!important}
+
+.event-section p,.event-grid .card p{font-size:.9rem}.event-section .event-date{font-size:1.1rem}.page-heading{flex-wrap:wrap;gap:16px}.event-grid .card{overflow-wrap:anywhere}
+
+/* チケットの会計反映は入金TODOの中にまとめ、入力欄の幅いっぱいを使う。 */
+.todo-ticket-payment{grid-column:1/-1;min-width:0;padding-top:8px;overflow-wrap:anywhere}
+.todo-ticket-payment .payment-import{margin-top:10px}

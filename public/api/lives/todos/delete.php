@@ -1,4 +1,4 @@
 <?php
-/** delete.php の役割：公開URLから認証付きライブAPIを呼び出す。 */
+/** delete.php の役割：公開URLから旧API互換入口を呼び出す。 */
 declare(strict_types=1);
-require_once __DIR__ . '/../../../../api/lives/todos/delete.php';
+require __DIR__ . '/../../../../api/lives/todos/delete.php';

@@ -6,6 +6,7 @@ $userId = startScheduleApi('GET');
 $filters = scheduleFilters();
 // 分類をSQLの件数集計・ページ分割より先に適用し、各欄の件数を正しく保つ。
 $kind = $_GET['kind'] ?? 'all';
-if (!in_array($kind, ['all', 'schedule', 'live'], true)) apiError('新着情報の種類が正しくありません。', 422);
-$filters['kind'] = $kind;
+if (!in_array($kind, ['all', 'schedule', 'event', 'live'], true)) apiError('新着情報の種類が正しくありません。', 422);
+// 旧kind=liveも受け付けるが、内部の分類名はeventへ統一する。
+$filters['kind'] = $kind === 'live' ? 'event' : $kind;
 apiSuccess(findPublicSchedules(database(), $userId, $filters, true));

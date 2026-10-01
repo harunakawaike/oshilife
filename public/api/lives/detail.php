@@ -1,4 +1,4 @@
 <?php
-/** detail.php の役割：公開URLから認証付きライブAPIを呼び出す。 */
+/** detail.php の役割：公開URLから旧API互換入口を呼び出す。 */
 declare(strict_types=1);
-require_once __DIR__ . '/../../../api/lives/detail.php';
+require __DIR__ . '/../../../api/lives/detail.php';

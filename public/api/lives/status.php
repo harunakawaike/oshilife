@@ -1,4 +1,4 @@
 <?php
-/** status.php の役割：公開URLから認証付きライブAPIを呼び出す。 */
+/** status.php の役割：公開URLから旧API互換入口を呼び出す。 */
 declare(strict_types=1);
-require_once __DIR__ . '/../../../api/lives/status.php';
+require __DIR__ . '/../../../api/lives/status.php';

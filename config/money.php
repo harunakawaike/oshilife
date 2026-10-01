@@ -2,7 +2,7 @@
 /** money.php の役割：支出カテゴリ、特効対象の初期値、遊びの換算基準を一元管理する。 */
 declare(strict_types=1);
 const MONEY_CATEGORIES = [
-    'live_ticket'=>['label'=>'ライブチケット','eligible'=>true],
+    'live_ticket'=>['label'=>'チケット・入場料','eligible'=>true],
     'goods'=>['label'=>'グッズ','eligible'=>true],
     'cd'=>['label'=>'CD','eligible'=>true],
     'dvd_bluray'=>['label'=>'DVD / Blu-ray','eligible'=>true],

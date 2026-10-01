@@ -1,0 +1,4 @@
+<?php
+/** update.php の役割：公開URLから認証付きイベントAPIを呼び出す。 */
+declare(strict_types=1);
+require_once __DIR__ . '/../../../../api/events/todos/update.php';

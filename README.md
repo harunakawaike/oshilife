@@ -1,13 +1,89 @@
-# Oshilife v2 — Phase 6
+# Oshilife v2 — Phase 6 / イベント管理 Step 2
 
-推し活の予定・ライブ・遠征・お金を、自分の推しを中心にまとめるWebアプリです。
+
+## イベント管理 Step 2：参加確定から準備を始める
+
+抽選LIVE・先着イベント・予約制舞台・無料展覧会を同じイベント管理で扱えるようになりました。登録／編集で6種類を選択し、「自分の管理」で受付方式と参加状況を保存してください。
+
+| 項目 | 意味 | 例 |
+|---|---|---|
+| 受付方式 | 参加手続きの種類 | 抽選・先着・予約・申込不要・未確認 |
+| 申込状況 | 手続きをどこまで進めたか | 未申込・手続き中・申込済み・申込不要 |
+| 抽選結果 | 抽選で選ばれたか | 結果待ち・当選・落選。非抽選は対象外 |
+| 参加状況 | 実際に参加するか | 検討中・参加確定・不参加・取消 |
+| 販売区分 | どの受付枠か | FC・一般販売・制作開放・公式先行 |
+| 支払い状況 | お金を支払ったか | 未完了・支払い済み。0円は支払い不要表示 |
+
+例えば「予約済みの舞台」は当選という結果を持ちません。「一般販売」は購入済みを意味しません。そのため各状態を分け、TODO生成を**当選から参加確定**へ変更しました。新画面では本人が参加状況を選びます。
+
+- 抽選LIVE：抽選 → 申込済み → 当選 → 参加確定 → 準備TODO。
+- 先着イベント：先着 → 申込／購入済み → 参加確定 → 準備TODO。
+- 予約制舞台：予約 → 予約済み → 参加確定 → 準備TODO。
+- 無料展覧会：申込不要 → 金額0円 → 参加確定 → 支払い以外のTODO・遠征。
+
+申込の保存値applyingは維持し、表示を「手続き中」にしています。非抽選はnot_applicable、申込不要はnot_requiredへサーバー側で正規化します。受付方式に応じて不要な欄は隠れます。
+
+チケット・入場料は「参加確定・正の金額・支払い済み・未反映」でお金管理へ反映できます。入金TODOと支払い選択は同期しますが、支出への登録は確認画面での本人操作が必要です。0円は反映しません。live_ticket保存値・source_idが本人管理IDであること・特効換算は維持しています。
+
+既存DB用の010_event_participation.sqlは適用済みです。バックアップ取得・検証DBでの復元と移行確認後に実行しました。再実行不要です。以下のStep 1説明は前段階の履歴です。現在の仕様と移行方法、主要ファイル、処理フロー、テスト結果は[Step 2実装報告](docs/EVENT_STEP2.md)を参照してください。
+
+## イベント名称への統一（Step 1の履歴）
+
+Oshilifeは音楽アーティストだけでなく、俳優・舞台・スポーツ・作品など、さまざまな推し活に利用できることを目指します。そのため画面・PHP・API・DBの管理名称をevent系へ揃えました。**今回は名称と参照構造のみの移行です。申込・当落・当選TODO・支払い反映条件は従来どおりです。**
+
+一覧は `public/events.php`、詳細は `event_detail.php`、登録・編集は `event_form.php`、APIは `public/api/events/` が公開入口です。旧画面はIDを保持して新画面へ移動し、旧 `/api/lives/` は新処理を呼ぶ互換入口です。互換APIだけ旧JSONキーを返します。
+
+```mermaid
+flowchart TD
+    S["schedules：タイトル・推し・日時の共有元"] --> E["events：schedule_id・会場・開催状態・種類"]
+    E --> U["user_event_status：本人の申込・当落・支払い"]
+    U --> T["trips：本人の遠征"]
+    U --> D["todos：本人の準備"]
+    T --> R["transportations / accommodations：交通・ホテル"]
+    U --> X["expenses：確認して反映した支出"]
+    R --> X
+```
+
+矢印は情報のつながりです。外部キー（誤った関連付けを防ぐDB制約）は `events.schedule_id` が `schedules.id` を参照する方向です。支出のチケット反映元 `source_id` は **user_event_status.id** であり、event_idではありません。
+
+`schedules.category` はカレンダー予定のカテゴリ、`events.event_type` は管理対象の種類です。別の項目であり、Step 1では既存・新規ともevent_typeは `live`。登録画面に種類選択はまだありません。将来の6種類の表示名は `config/events.php` の `EVENT_TYPES` にまとめています。
+
+既存DBにはバックアップ・復元確認後に **009_event_management.sqlだけ** を一度適用します。この環境は適用済みです。適用済み006〜008は変更していません。新規の空DBには現在のschema.sqlを使用し、その後009を重ねて実行しないでください。DDL（テーブル定義の変更）は全体を一括で取り消せないため、書き込み停止・バックアップ・検証DBでの試行が必要です。
+
+| 主要ファイル | 役割 |
+|---|---|
+| public/events.php / event_detail.php / event_form.php | 一覧・詳細・登録編集 |
+| public/assets/js/events.js / css/events.css | API呼び出し・PC／スマホ表示 |
+| config/events.php | 種類名・既存の状態名・TODOテンプレート |
+| app/helpers/event_api.php / event_view.php | API認証・経路振り分けと共通画面部品 |
+| app/helpers/legacy_event_api.php | 旧APIの入出力名だけを変換 |
+| app/validators/event_validator.php | 保存前の入力検証 |
+| app/services/event_service.php | イベント・本人管理・TODO・遠征の保存 |
+| app/repositories/event_repository.php | DB取得。個人情報は本人IDで絞り込む |
+| database/migrations/009_event_management.sql | 既存ID・値を保持する名称移行 |
+| docs/EVENT_STEP1.md | バックアップ・移行・テスト結果と残した名称 |
+
+### 処理の流れ
+
+`event_form.php → events.js → public/api/events/create.php → api/events/create.php → event_api.php → event_service.php → 入力検証 → schedules / eventsへ保存 → JSON → event_detail.php`
+
+`event_detail.php → events/status/update.php → user_event_status → 当選かつ移動区分選択済みなら不足TODOを生成`
+
+`入金TODOの完了 → 本人の支払い状況 → money/source.phpで反映可否を確認 → 支出登録画面 → expenses/create.phpで再確認・重複防止 → expensesへ保存`
+
+`live_ticket` の保存値・特効換算・当落の値は変更していません。新着の `kind=live` は互換値として受け付けますが、新JavaScriptは `kind=event` を使用します。分類条件自体は従来どおりです。
+
+詳細は [Step 1実装報告](docs/EVENT_STEP1.md) を参照してください。以下のPhase別説明には各時点の検証結果・未実装項目の履歴も含まれます。
+
+
+推し活の予定・イベント・遠征・お金を、自分の推しを中心にまとめるWebアプリです。
 Phase 1の認証基盤に、Phase 2の推し検索・新規作成・編集・自分への登録/解除・メンバーとハートカラー・ホーム推し切替・レスポンシブ対応を追加しました。
 
 Phase 3では予定の公開・非公開登録、月間カレンダー、他ユーザーの予定取り込み、自動同期と自分用編集を追加しました。詳細なファイル一覧・API・DB制約・学習解説・A/B確認手順は [Phase 3実装ガイド](docs/PHASE3.md) を参照してください。
 
 Phase 4では修正提案・投稿者の承認／却下・感謝のリアクション・共有状況・当月集計を追加しました。[Phase 4実装ガイド](docs/PHASE4.md) に全ファイル、API、DB制約、確認手順をまとめています。
 
-Phase 5ではライブ公演の共有、本人の申込・当落、当選後TODO、交通・ホテルをまとめた遠征管理、ホームの次のライブを追加しました。[Phase 5実装ガイド](docs/PHASE5.md) にファイル一覧、API、DB、学習解説、検証結果、ブラウザでの確認手順をまとめています。
+Phase 5ではイベント公演の共有、本人の申込・当落、当選後TODO、交通・ホテルをまとめた遠征管理、ホームの次のイベントを追加しました。[Phase 5実装ガイド](docs/PHASE5.md) にファイル一覧、API、DB、学習解説、検証結果、ブラウザでの確認手順をまとめています。
 
 Phase 6では年間お金管理、共通／推し別の積立、支出、遠征費の確認後反映、特効換算を追加しました。マイページの「お金管理」から利用できます。[Phase 6実装・学習ガイド](docs/PHASE6.md) に指定21項目の報告と確認手順をまとめています。
 
@@ -147,7 +223,7 @@ Phase 2：
 | middleware/ | 認証とCSRFの共通チェック |
 | config/app.php | URL・セッション・共通起動設定 |
 | config/database.php | .envの専用MySQLへ接続 |
-| database/schema.sql | 新規環境用の全5テーブル |
+| database/schema.sql | 新規環境用の全21テーブル（イベント名称対応） |
 | database/migrations/002_oshi_management.sql | Phase 1からの追加3テーブル |
 | database/seeds/ | 初期マスター用CSVテンプレート |
 | includes/ | 共通ヘッダー・ナビ・フッター |
@@ -164,7 +240,7 @@ Phase 2：
 | public/oshis.php | 自分の推し一覧、検索、新規作成の画面 |
 | public/oshi_detail.php | 推し詳細、ハート付きメンバー、作成者向け追加フォーム |
 | public/profile.php | 本人情報、推し管理リンク、ログアウト |
-| public/calendar.php / discover.php / live.php | 次Phaseの機能の表示例 |
+| public/calendar.php / discover.php / events.php | 次Phaseの機能の表示例 |
 | public/assets/js/common.js | 同一公開パスでのAPI通信、CSRF、ログアウト |
 | public/assets/js/auth.js | 認証フォーム送信と項目エラー表示 |
 | public/assets/js/oshis.js | 検索・追加・確認付き解除・作成・ハート選択の送信 |
@@ -415,9 +491,9 @@ python3 tests/phase2_smoke.py
 
 詳しい変更ファイルと結果は [Phase 2レポート](docs/PHASE2.md)、認証の基本は [学習ガイド](docs/LEARNING.md) にまとめました。
 
-## 未実装とPhase 5へ進む前の確認
+## Phase 4当時の未実装とPhase 5へ進む前の確認（履歴）
 
-予定共有・同期・修正提案・感謝のリアクション・配色設定は実装済みです。ライブ本機能、遠征、会場周辺スポット、お金管理、特効換算、連番ルーム、Chat、月次カードの固定保存、年末振り返りは未実装です。推しの無効化画面、メンバー編集・削除、メール確認・パスワード再設定も今後の範囲です。
+予定共有・同期・修正提案・感謝のリアクション・配色設定は実装済みです。イベント本機能、遠征、会場周辺スポット、お金管理、特効換算、連番ルーム、Chat、月次カードの固定保存、年末振り返りは未実装です。推しの無効化画面、メンバー編集・削除、メール確認・パスワード再設定も今後の範囲です。
 
 - 実ブラウザのスマホ／PC表示と操作を確認する。
 - 月次集計は現在残る追加・リアクションを数える仕様を確認する。
@@ -644,34 +720,34 @@ reactionsのUNIQUE制約は同じ予定・本人・種類の二重登録を防�
 
 | ファイル / ディレクトリ | 役割 |
 | --- | --- |
-| `public/live.php` / `live_form.php` / `live_detail.php` | 公演の検索・共有登録・本人の当落と準備 |
+| `public/events.php` / `event_form.php` / `event_detail.php` | 公演の検索・共有登録・本人の当落と準備 |
 | `public/trip_detail.php` / `travel_form.php` | 本人の遠征まとめ、複数の交通・宿泊の入力 |
-| `public/home.php` | 直近の管理中ライブ・残り日数・未完了TODO |
-| `public/assets/js/lives.js` | API送信、重複確認、TODO操作、検索、ホームの推し切替 |
-| `public/assets/css/lives.css` | 本人のテーマ色を使ったPC・スマホ向け配置 |
-| `config/lives.php` | 状態の日本語表示と近場6項目／遠征8項目のTODOテンプレート |
-| `app/helpers/live_view.php` | 認証済み画面の共通入力欄・TODO表示 |
-| `app/helpers/live_api.php` | 共通の認証・CSRF・API振り分け |
-| `app/validators/live_validator.php` | 必須入力・日付順序・金額・URLの検証 |
-| `app/services/live_service.php` | 共有公演、本人状況、TODO、遠征の保存手順 |
-| `app/repositories/live_repository.php` | 共有公演と本人限定データのSQL取得 |
-| `api/lives/` / `api/trips/` / `api/venues/` | ライブ・個人管理・TODO・遠征・交通・宿泊・会場のAPI |
+| `public/home.php` | 直近の管理中イベント・残り日数・未完了TODO |
+| `public/assets/js/events.js` | API送信、重複確認、TODO操作、検索、ホームの推し切替 |
+| `public/assets/css/events.css` | 本人のテーマ色を使ったPC・スマホ向け配置 |
+| `config/events.php` | 状態の日本語表示と近場6項目／遠征8項目のTODOテンプレート |
+| `app/helpers/event_view.php` | 認証済み画面の共通入力欄・TODO表示 |
+| `app/helpers/event_api.php` | 共通の認証・CSRF・API振り分け |
+| `app/validators/event_validator.php` | 必須入力・日付順序・金額・URLの検証 |
+| `app/services/event_service.php` | 共有公演、本人状況、TODO、遠征の保存手順 |
+| `app/repositories/event_repository.php` | 共有公演と本人限定データのSQL取得 |
+| `api/events/` / `api/trips/` / `api/venues/` | イベント・個人管理・TODO・遠征・交通・宿泊・会場のAPI |
 | `public/api/` 内の同名入口 | ブラウザからAPIへアクセスする公開URL |
 | `database/migrations/006_live_management.sql` | 既存DBを維持して7テーブルを追加（この環境は適用済み） |
-| `tests/phase5_smoke.py` / `tests/lives_ui.mjs` | 3ユーザーのHTTP・DB検証とJavaScript操作検証 |
+| `tests/phase5_smoke.py` / `tests/events_ui.mjs` | 3ユーザーのHTTP・DB検証とJavaScript操作検証 |
 
 ## Phase 5：処理の流れ
 
 ```text
 共有公演の登録
-live_form.php → lives.js → api/lives/create.php
+event_form.php → events.js → api/events/create.php
   → 認証・CSRF → 入力検証・重複候補確認
   → schedulesへ公演の日時・タイトルを保存
-  → live_eventsがschedule_idを参照 → JSON応答 → 詳細へ
+  → eventsがschedule_idを参照 → JSON応答 → 詳細へ
 
 自分の当落
-live_detail.php → lives.js → api/lives/status/update.php
-  → セッションから本人ID取得 → user_live_statusへ保存
+event_detail.php → events.js → api/events/status/update.php
+  → セッションから本人ID取得 → user_event_statusへ保存
   → 当選＋近場なら6項目、当選＋遠征なら8項目のTODO
   → 固定のtemplate_keyで不足分だけ追加 → 画面へ
 
@@ -681,13 +757,13 @@ live_detail.php → lives.js → api/lives/status/update.php
   → trip_detail.phpで公演・交通・ホテル・TODO・会場を確認
 
 ホーム
-home.php → lives/next.php → 本人が管理する今日以降の公演
+home.php → events/next.php → 本人が管理する今日以降の公演
   → 中止・終了・本人が落選した公演を除いた直近日 → 残り日数・未完了TODOを表示
 ```
 
-`live_events` は共有公演、`user_live_status` 以下は本人の情報です。同じ公演を複数人が管理しても当落や予約は混ざりません。セッション（サーバー側のログイン記録）の本人IDで必ず絞り、他人のtrip_idを送られても取得・編集を拒否します。
+`events` は共有公演、`user_event_status` 以下は本人の情報です。同じ公演を複数人が管理しても当落や予約は混ざりません。セッション（サーバー側のログイン記録）の本人IDで必ず絞り、他人のtrip_idを送られても取得・編集を拒否します。
 
-ライブ1公演は既存の公開予定1件に対応します。タイトル・日時は `schedules` に一元化し、同期中のカレンダーは変更を反映、自分用に編集済みの内容は維持します。本人の管理を保存するとカレンダーにも重複なく追加されます。延期・中止は削除せず状態として残します。
+イベント1公演は既存の公開予定1件に対応します。タイトル・日時は `schedules` に一元化し、同期中のカレンダーは変更を反映、自分用に編集済みの内容は維持します。本人の管理を保存するとカレンダーにも重複なく追加されます。延期・中止は削除せず状態として残します。
 
 TODOは表示名を変えても固定識別子で判定するため、再当選で増えません。削除済みの識別子も残し、勝手に復活させません。近場→遠征は交通・ホテルなど不足分だけ追加、逆の変更では既存TODOや予約を削除しません。
 
@@ -695,9 +771,9 @@ APIはJSONでデータを返すPHPの入口、serviceは保存手順、repositor
 
 2026-09-30：Phase 5は147件、既存Phase 3は176件、Phase 4は192件のHTTP確認に合格。一時テストデータ清掃後、全19テーブルの元データが維持されていることを確認しました。JavaScript操作のDOMモデル検証も合格。**実ブラウザでのPC／スマホの見た目・操作確認は未実施**です。[ブラウザ確認手順](docs/PHASE5.md#18-ブラウザで確認する手順) を参照してください。
 
-### ホームの新着を公開予定とライブ情報に分ける
+### ホームの新着を公開予定とイベント情報に分ける
 
-「新着の公開予定」はライブ以外、「新着のライブ情報」はライブ管理の連携公演とライブカテゴリの予定です。両方とも本人が登録した推しの未追加公開情報だけを表示します。今日の予定と「次のライブ」は従来どおりです。
+「新着の公開予定」はイベント以外、「新着のイベント情報」はイベント管理の連携公演とイベントカテゴリの予定です。両方とも本人が登録した推しの未追加公開情報だけを表示します。今日の予定と「次のイベント」は従来どおりです。
 
 `home.php` が2つの表示欄を用意し、`home.js` が `api/schedules/unadded.php?kind=schedule` と `kind=live` を別々に取得します。`schedule_repository.php` は分類後に件数集計と20件ずつのページ分割をするため、表示後に間引いて件数がずれることを防ぎます。kind省略時は従来の全種類取得を維持します。
 
@@ -743,11 +819,11 @@ APIはJSONでデータを返すPHPの入口、serviceは保存手順、repositor
 
 金額は既存予約と同じDECIMAL(12,2)で保持し、小数を失いません。ホームの「推し活資金」も同じ年間APIの実データを使い、上部の推し切替に追随します。
 
-Phase 6は167項目のHTTP検証と、全21テーブルの元データ維持を確認。Phase 5の147項目、新着分類・ライブ・カレンダー・通知などのJavaScript検証も合格しています。**実ブラウザでのPC／スマホの描画・操作は未確認**です。各ファイルの詳しい役割、認証・API・DB処理の読み方、指定21項目の報告、ブラウザ確認手順は [Phase 6ガイド](docs/PHASE6.md) を参照してください。
+Phase 6は167項目のHTTP検証と、全21テーブルの元データ維持を確認。Phase 5の147項目、新着分類・イベント・カレンダー・通知などのJavaScript検証も合格しています。**実ブラウザでのPC／スマホの描画・操作は未確認**です。各ファイルの詳しい役割、認証・API・DB処理の読み方、指定21項目の報告、ブラウザ確認手順は [Phase 6ガイド](docs/PHASE6.md) を参照してください。
 
 ## 支払い完了からお金管理への反映連携
 
-ライブ詳細の「自分の管理」にチケット代、交通・ホテルの編集に支払い状況を追加しました。支払い操作だけではexpensesへ登録しません。
+イベント詳細の「自分の管理」にチケット代、交通・ホテルの編集に支払い状況を追加しました。支払い操作だけではexpensesへ登録しません。
 
 | 種類 | 反映ボタンが出る条件 | 特効換算 |
 | --- | --- | --- |
@@ -769,6 +845,6 @@ Phase 6は167項目のHTTP検証と、全21テーブルの元データ維持を�
 
 既存の反映APIを拡張し、expense_id確認とUNIQUEの両方で二重登録を防ぎます。元の金額変更で会計を自動上書きせず、差がある場合は警告と既存支出の編集リンクを表示します。
 
-`008_payment_import.sql` は適用済み。既存の交通・宿泊支出も元のexpense_idへ引き継ぎました。支払いの過去状態は推測しません。`app/helpers/payment_view.php` が3状態を共通表示し、`money_repository.php` が反映条件と本人、`money_service.php` が保存前の再確認とID連携、`live_service.php` が入金TODO・支払い状態を担当します。
+`008_payment_import.sql` は適用済み。既存の交通・宿泊支出も元のexpense_idへ引き継ぎました。支払いの過去状態は推測しません。`app/helpers/payment_view.php` が3状態を共通表示し、`money_repository.php` が反映条件と本人、`money_service.php` が保存前の再確認とID連携、`event_service.php` が入金TODO・支払い状態を担当します。
 
 支払い連携151項目と既存お金管理167項目のHTTP検証、全21テーブルの元データ維持を確認しました。実ブラウザ操作は未実施です。変更ファイル・追加列・API・学習解説・ブラウザ確認手順の13項目は [支払い連携ガイド](docs/PAYMENT_IMPORT.md) を参照してください。

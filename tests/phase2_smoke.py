@@ -163,7 +163,7 @@ try:
     a.call('api/oshis/members/create.php', 'POST', member, status=409)
     members = b.call(f'api/oshis/members.php?id={oshi_id}')['data']['members']
     assert members[0]['heart_emoji'] == '🩷' and members[0]['hex_color'] == '#E7A6C0'
-    for page in ['home.php', 'calendar.php', 'discover.php', 'live.php', 'profile.php', 'oshis.php', f'oshi_detail.php?id={oshi_id}']:
+    for page in ['home.php', 'calendar.php', 'discover.php', 'events.php', 'profile.php', 'oshis.php', f'oshi_detail.php?id={oshi_id}']:
         response, html = a.call(page)
         assert response.url == args.base + '/' + page
         assert html.count('aria-label="メインナビゲーション"') == 1

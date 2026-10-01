@@ -64,7 +64,7 @@ public/assets/css/home.css
 public/assets/css/profile.css
 public/discover.php
 public/home.php
-public/live.php
+public/events.php
 public/profile.php
 tests/smoke.py
 ```
@@ -155,7 +155,7 @@ public/calendar.php
 public/discover.php
 public/home.php
 public/index.php
-public/live.php
+public/events.php
 public/login.php
 public/oshi_detail.php
 public/oshis.php

@@ -26,8 +26,8 @@ function scheduleCard(item, options = {}) {
     if (item.status !== 'active') {
         card.append(scheduleElement('p', 'schedule-warning', item.status === 'cancelled' ? '中止' : '共有元の予定は削除されました'));
     }
-    if (item.live_status === 'postponed') card.append(scheduleElement('p', 'schedule-warning', '延期'));
-    if (item.live_event_id) { const link = scheduleElement('a', 'text-button', 'ライブ管理 →'); link.href = appUrl(`live_detail.php?id=${item.live_event_id}`); card.append(link); }
+    if (item.event_status === 'postponed') card.append(scheduleElement('p', 'schedule-warning', '延期'));
+    if (item.event_id) { const link = scheduleElement('a', 'text-button', 'イベント管理 →'); link.href = appUrl(`event_detail.php?id=${item.event_id}`); card.append(link); }
     const meta = options.public ? `${item.date} · ${item.category_label} · ${item.oshi_name}` : `${item.date} · ${item.category_label}`;
     card.append(scheduleElement('p', 'schedule-meta', meta));
     if (options.public) {
@@ -59,7 +59,7 @@ function scheduleCard(item, options = {}) {
             card.append(button, message);
         }
     }
-    if (!options.public && options.onRemoved && ((item.is_owner && !item.live_event_id && item.status !== 'deleted') || (!item.is_owner && item.is_added))) {
+    if (!options.public && options.onRemoved && ((item.is_owner && !item.event_id && item.status !== 'deleted') || (!item.is_owner && item.is_added))) {
         const remove = scheduleElement('button', 'button secondary small', item.is_owner ? '予定を削除' : 'カレンダーから外す');
         remove.type = 'button';
         remove.setAttribute('aria-label', `${item.title}を${item.is_owner ? '削除' : 'カレンダーから外す'}`);

@@ -20,14 +20,14 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
     background: var(--accent); color: var(--on-accent);
 }
 .oshi-selector, .empty-state, .profile-avatar, .heart-options span,
-.today-card .schedule-card, .live-preview, .funds, .thanks, .live-checklist span {
+.today-card .schedule-card, .event-preview, .funds, .thanks, .event-checklist span {
     background: var(--surface); color: var(--ink); border-color: var(--border);
 }
 .today-card, .profile-card, .oshi-detail-hero, .concert-cover {
     background: var(--surface); border: 1px solid var(--border); border-left: 5px solid var(--accent);
 }
 .date-label, .event-row p, .event-time, .profile-avatar, .concert-cover small,
-.concert-cover strong, .cover-year, .live-preview > span { color: var(--ink); }
+.concert-cover strong, .cover-year, .event-preview > span { color: var(--ink); }
 .month-weekday:first-child { color: var(--accent-text); }
 .schedule-card .schedule-warning, .form-message, .field-error, .danger { color: var(--ink); font-weight: 600; }
 .field-error:not(:empty), .schedule-warning:not(:empty) { border-left: 3px solid currentColor; padding-left: 8px; }

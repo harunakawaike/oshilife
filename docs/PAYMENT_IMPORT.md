@@ -6,22 +6,22 @@
 
 | ファイル | 変更内容 |
 | --- | --- |
-| `config/lives.php` | 予約状況とは別の支払い状態unpaid／paidの日本語表示 |
-| `app/repositories/live_repository.php` | ログイン本人のチケット金額・支払い・反映IDを取得 |
-| `app/services/live_service.php` | チケット金額保存、固定キーpaymentのTODOとの支払い連動、交通・宿泊の支払い保存 |
+| `config/events.php` | 予約状況とは別の支払い状態unpaid／paidの日本語表示 |
+| `app/repositories/event_repository.php` | ログイン本人のチケット金額・支払い・反映IDを取得 |
+| `app/services/event_service.php` | チケット金額保存、固定キーpaymentのTODOとの支払い連動、交通・宿泊の支払い保存 |
 | `app/repositories/money_repository.php` | 本人の反映元取得、支払い条件、反映済みID、金額差の判定、IDの紐付け |
 | `app/services/money_service.php` | 保存直前の条件再確認、チケット対応、反映済み拒否、元データのID保存 |
 | `app/helpers/money_api.php` | 既存source APIにlive_ticketを追加 |
-| `app/helpers/live_view.php` | 入金TODOのチェックボックスへ識別用属性を追加 |
-| `public/live_detail.php` | 個人のチケット代入力、支払い・反映状態の表示 |
+| `app/helpers/event_view.php` | 入金TODOのチェックボックスへ識別用属性を追加 |
+| `public/event_detail.php` | 個人のチケット代入力、支払い・反映状態の表示 |
 | `public/travel_form.php` | 交通・ホテルの予約状況と支払い状況を別々に入力 |
 | `public/trip_detail.php` | 支払い状態、条件付き反映ボタン、反映済み表示、金額差警告 |
 | `public/expense_form.php` | 未完了候補を拒否、チケットの確認画面、反映済みなら既存支出へ案内 |
-| `public/assets/js/lives.js` | 入金TODO変更後に最新の反映案内を再表示 |
+| `public/assets/js/events.js` | 入金TODO変更後に最新の反映案内を再表示 |
 | `public/assets/js/money.js` | チケットの固定された特効対象trueを正しく送信 |
 | `database/schema.sql` | 新規構築時にも追加列を作成 |
 | `tests/phase6_smoke.py` | 既存の反映テストを新しい支払い条件に合わせる |
-| `tests/lives_ui.mjs`・`tests/money_ui.mjs` | 入金TODO案内・チケット確認時の送信を検証 |
+| `tests/events_ui.mjs`・`tests/money_ui.mjs` | 入金TODO案内・チケット確認時の送信を検証 |
 | `README.md`・`docs/PHASE6.md` | 新しい反映条件と説明を追加・更新 |
 
 ## 2. 新規ファイル
@@ -47,10 +47,10 @@
 
 | テーブル | 追加列 |
 | --- | --- |
-| user_live_status | ticket_amount：DECIMAL(12,2)、NULL可 |
-| user_live_status | ticket_payment_status：unpaid／paid |
-| user_live_status | ticket_paid_date：支払完了日、NULL可 |
-| user_live_status | ticket_expense_id：反映済みexpenses.id、NULL可 |
+| user_event_status | ticket_amount：DECIMAL(12,2)、NULL可 |
+| user_event_status | ticket_payment_status：unpaid／paid |
+| user_event_status | ticket_paid_date：支払完了日、NULL可 |
+| user_event_status | ticket_expense_id：反映済みexpenses.id、NULL可 |
 | transportations | payment_status、paid_date、expense_id |
 | accommodations | payment_status、paid_date、expense_id |
 
@@ -64,9 +64,9 @@ expense_id系の列にはUNIQUEとexpensesへの外部キーを追加しまし�
 
 | API | 用途 |
 | --- | --- |
-| POST `/api/lives/status/update.php` | 従来の当落・移動・メモに加え、任意のticket_amountを保存 |
-| POST `/api/lives/todos/toggle.php` | 入金TODO完了／未完了とチケット支払い状態を同期。支出は作らない |
-| POST `/api/lives/todos/delete.php` | 入金TODO削除時はチケット支払いを未完了へ戻す。支出は消さない |
+| POST `/api/events/status/update.php` | 従来の当落・移動・メモに加え、任意のticket_amountを保存 |
+| POST `/api/events/todos/toggle.php` | 入金TODO完了／未完了とチケット支払い状態を同期。支出は作らない |
+| POST `/api/events/todos/delete.php` | 入金TODO削除時はチケット支払いを未完了へ戻す。支出は消さない |
 | POST `/api/trips/transport/create.php`・`update.php` | payment_statusを追加。省略更新時は既存値を維持 |
 | POST `/api/trips/accommodation/create.php`・`update.php` | 同上 |
 | GET `/api/money/source.php` | source_type・source_idから確認内容とcan_import・expense_id・amount_changedを取得 |
@@ -74,14 +74,14 @@ expense_id系の列にはUNIQUEとexpensesへの外部キーを追加しまし�
 | POST `/api/money/expenses/update.php` | 反映済みの支出を利用者が明示的に編集 |
 | POST `/api/money/expenses/delete.php` | 支出を削除し、外部キーで元の反映IDも解除 |
 
-source_typeは **live_ticket／transportation／accommodation**。チケットのsource_idは共有live_event_idではなく、**本人のuser_live_status.id** です。交通・ホテルはそれぞれ元予約のIDです。user_idは送信せずセッションで取得します。
+source_typeは **live_ticket／transportation／accommodation**。チケットのsource_idは共有event_idではなく、**本人のuser_event_status.id** です。交通・ホテルはそれぞれ元予約のIDです。user_idは送信せずセッションで取得します。
 
 実URLは `/oshilife-v2/public/api/...`。未完了や反映済みの直接POSTは409、入力・特効対象の改ざんは422、他人のデータは404、CSRF不備は419で拒否します。
 
-## 6. ライブチケット → expenses
+## 6. イベントチケット → expenses
 
 ```text
-本人のライブ管理でticket_amountを保存
+本人のイベント管理でticket_amountを保存
   ↓
 固定キーpaymentの「入金・支払い確認」TODOを完了
   → ticket_payment_status=paid、ticket_paid_dateを記録
@@ -90,7 +90,7 @@ source_typeは **live_ticket／transportation／accommodation**。チケット�
 当選 ＋ 金額>0 ＋ 入金TODO完了 ＋ 未反映
   →「お金管理に反映できます」と反映ボタン
   ↓ 利用者が押す
-支出名・金額・支払日・推し・ライブを確認
+支出名・金額・支払日・推し・イベントを確認
   ↓ 利用者が保存
 expensesへlive_ticket・特効対象trueで登録
   ＋ ticket_expense_idへ作成した支出IDを保存
@@ -98,7 +98,7 @@ expensesへlive_ticket・特効対象trueで登録
 
 TODOの表示名を変更しても固定キーで識別します。他のTODOや、同じ名前の任意追加TODOは入金確認として扱いません。金額未設定・0円・落選・TODO未完了／削除済みなら反映できません。完了の取り消し後でも、反映済みの支出を自動削除しません。
 
-確認画面の支出名は公演名＋公演日＋チケット。日付は支払完了日、過去の不明なものは当日を初期値にし、利用者が変更できます。関連推し・ライブ・カテゴリと特効対象は反映元に固定します。
+確認画面の支出名は公演名＋公演日＋チケット。日付は支払完了日、過去の不明なものは当日を初期値にし、利用者が変更できます。関連推し・イベント・カテゴリと特効対象は反映元に固定します。
 
 ## 7. 交通 → expenses
 
@@ -147,7 +147,7 @@ TODOの表示名を変更しても固定キーで識別します。他のTODOや
 
 ## 11. セキュリティ・検証結果
 
-チケットはuser_live_status.user_id、交通・ホテルはtrip.user_idをセッション本人と照合します。共有公演を利用しているだけで他人のチケット金額や入金情報を取得することはできません。readonly表示や隠し入力だけを信用せず、PHPで本人・金額・支払い・当落・カテゴリ・特効対象を再確認します。
+チケットはuser_event_status.user_id、交通・ホテルはtrip.user_idをセッション本人と照合します。共有公演を利用しているだけで他人のチケット金額や入金情報を取得することはできません。readonly表示や隠し入力だけを信用せず、PHPで本人・金額・支払い・当落・カテゴリ・特効対象を再確認します。
 
 保存APIは既存のCSRF、PDOプリペアドステートメント、トランザクションを利用。画面の文字列はe()／textContentで扱います。ユーザーから送られたexpense_idで元データを紐付ける処理はありません。
 
@@ -157,14 +157,14 @@ TODOの表示名を変更しても固定キーで識別します。他のTODOや
 | 既存お金管理の回帰 | 167項目合格。年間／推し別／月別／カテゴリ／特効、積立・支出編集を維持 |
 | 元データ維持 | 両テストとも全21テーブルのテスト前後の件数・内容ハッシュ一致。一時データ清掃済み |
 | PHP構文 | 225ファイル、エラーなし |
-| JavaScript | お金管理・ライブ・ホーム新着のDOMモデル合格。入金TODO後の再表示、チケット特効trueの送信も確認 |
+| JavaScript | お金管理・イベント・ホーム新着のDOMモデル合格。入金TODO後の再表示、チケット特効trueの送信も確認 |
 | 実ブラウザ | 操作が許可されていないため未実施。下記手順での描画・操作確認が残っています |
 
-再検証：`python3 tests/payment_import_smoke.py`、`python3 tests/phase6_smoke.py`、`node tests/lives_ui.mjs`、`node tests/money_ui.mjs`。
+再検証：`python3 tests/payment_import_smoke.py`、`python3 tests/phase6_smoke.py`、`node tests/events_ui.mjs`、`node tests/money_ui.mjs`。
 
 ## 12. ブラウザで確認する手順
 
-1. localhostでログインし、当選したライブの「自分の管理」にチケット代を入力して保存します。入金TODO未完了の間は反映ボタンがないことを確認します。
+1. localhostでログインし、当選したイベントの「自分の管理」にチケット代を入力して保存します。入金TODO未完了の間は反映ボタンがないことを確認します。
 2. 入金TODOを完了すると表示が更新され、入金TODO内にチケット金額・案内・反映ボタンが出ます。この時点ではホームの支出額は増えません。
 3. 反映ボタン→確認画面で支出日・金額等を確認→保存。live_ticket・特効対象でお金管理へ登録され、元の欄は「✓ お金管理に反映済み」になります。
 4. 遠征の交通を予約済みにするだけでは反映ボタンが出ません。支払い状況を支払い済みにして保存すると、正の金額であれば反映できます。ホテルも同様に確認します。
@@ -180,4 +180,4 @@ TODOの表示名を変更しても固定キーで識別します。他のTODOや
 
 支払いが完了しただけで会計へ登録すると、すでに手入力している費用や支出日を確認できず、意図しない二重計上になる可能性があります。そのため「反映可能」と「反映済み」を分け、保存ボタンで本人が確認した支出だけを登録します。手入力支出との重複までは自動推測しないため、確認画面で既存記録も確認してください。
 
-表示位置：チケットの金額・反映ボタン・反映済み状態は、ライブ詳細と遠征まとめの「入金／支払い確認」TODO内にまとめています。独立したチケット支払いカードは表示しません。入金TODOを削除した場合も、反映済み支出へのリンクは準備TODO欄内に残します。
+表示位置：チケットの金額・反映ボタン・反映済み状態は、イベント詳細と遠征まとめの「入金／支払い確認」TODO内にまとめています。独立したチケット支払いカードは表示しません。入金TODOを削除した場合も、反映済み支出へのリンクは準備TODO欄内に残します。

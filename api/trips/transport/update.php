@@ -1,5 +1,5 @@
 <?php
-/** update.php の役割：ライブ・遠征のtrips/transport/update処理を認証付きで実行する。 */
+/** update.php の役割：イベント・遠征のtrips/transport/update処理を認証付きで実行する。 */
 declare(strict_types=1);
-require_once __DIR__ . '/../../../app/helpers/live_api.php';
-runLiveApi('trips/transport/update');
+require_once __DIR__ . '/../../../app/helpers/event_api.php';
+runEventApi('trips/transport/update');

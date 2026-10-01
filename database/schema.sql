@@ -1,4 +1,4 @@
--- Oshilife v2 Phase 4までの新規環境用スキーマ。作成済みDBには再実行しないこと。
+-- Oshilife v2 イベント名称移行Step 1までの新規環境用スキーマ。作成済みDBには再実行しないこと。
 -- DBそのものの作成はREADMEの別手順で行う。DROP/DELETEは含めない。
 USE oshilife_v2;
 
@@ -209,35 +209,46 @@ CREATE TABLE venues (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- タイトル・推し・公演日・開始終了・作成者・メモはschedule_id先のschedulesへ一元化。
-CREATE TABLE live_events (
+CREATE TABLE events (
+ event_type VARCHAR(30) NOT NULL DEFAULT 'live',
+ CONSTRAINT event_type_allowed CHECK (event_type IN ('live','performance','event','sports','exhibition','other')),
  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
  schedule_id BIGINT UNSIGNED NOT NULL, venue_id BIGINT UNSIGNED NOT NULL,
  open_time TIME NULL, status VARCHAR(20) NOT NULL DEFAULT 'scheduled',
  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
- UNIQUE KEY live_schedule_unique (schedule_id), INDEX live_venue (venue_id), INDEX live_status (status,schedule_id),
- CONSTRAINT live_schedule_fk FOREIGN KEY (schedule_id) REFERENCES schedules(id) ON DELETE RESTRICT,
- CONSTRAINT live_venue_fk FOREIGN KEY (venue_id) REFERENCES venues(id) ON DELETE RESTRICT
+ UNIQUE KEY event_schedule_unique (schedule_id), INDEX event_venue (venue_id), INDEX event_status (status,schedule_id),
+ CONSTRAINT event_schedule_fk FOREIGN KEY (schedule_id) REFERENCES schedules(id) ON DELETE RESTRICT,
+ CONSTRAINT event_venue_fk FOREIGN KEY (venue_id) REFERENCES venues(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-CREATE TABLE user_live_status (
+CREATE TABLE user_event_status (
+ entry_method VARCHAR(30) NOT NULL DEFAULT 'unknown',
+ participation_status VARCHAR(30) NOT NULL DEFAULT 'considering',
+ sales_type VARCHAR(30) NOT NULL DEFAULT 'none',
+ legacy_lottery_status VARCHAR(30) NULL,
+ CONSTRAINT entry_method_allowed CHECK (entry_method IN ('lottery','first_come','reservation','no_application','unknown')),
+ CONSTRAINT participation_status_allowed CHECK (participation_status IN ('considering','confirmed','not_attending','cancelled')),
+ CONSTRAINT sales_type_allowed CHECK (sales_type IN ('fanclub','general_sale','production_release','official_presale','other','none')),
+ CONSTRAINT lottery_status_allowed CHECK (lottery_status IN ('not_applicable','pending','won','lost')),
+ CONSTRAINT application_status_allowed CHECK (application_status IN ('not_applied','applying','applied','not_required')),
  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
- user_id BIGINT UNSIGNED NOT NULL, live_event_id BIGINT UNSIGNED NOT NULL,
- application_status VARCHAR(30) NOT NULL DEFAULT 'not_applied', lottery_status VARCHAR(30) NOT NULL DEFAULT 'pending',
+ user_id BIGINT UNSIGNED NOT NULL, event_id BIGINT UNSIGNED NOT NULL,
+ application_status VARCHAR(30) NOT NULL DEFAULT 'not_applied', lottery_status VARCHAR(30) NOT NULL DEFAULT 'not_applicable',
  trip_type VARCHAR(10) NULL, note TEXT NOT NULL,
  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
- UNIQUE KEY user_live_unique (user_id,live_event_id), INDEX user_live_event (live_event_id),
- CONSTRAINT user_live_user_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
- CONSTRAINT user_live_live_fk FOREIGN KEY (live_event_id) REFERENCES live_events(id) ON DELETE RESTRICT
+ UNIQUE KEY user_event_unique (user_id,event_id), INDEX user_event_event (event_id),
+ CONSTRAINT user_event_user_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+ CONSTRAINT user_event_event_fk FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE trips (
  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
- user_id BIGINT UNSIGNED NOT NULL, live_event_id BIGINT UNSIGNED NOT NULL,
+ user_id BIGINT UNSIGNED NOT NULL, event_id BIGINT UNSIGNED NOT NULL,
  trip_name VARCHAR(150) NOT NULL, departure_date DATE NOT NULL, return_date DATE NOT NULL, note TEXT NOT NULL,
  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
- UNIQUE KEY trips_user_live (user_id,live_event_id), UNIQUE KEY trips_owner_identity (id,user_id,live_event_id), INDEX trips_live (live_event_id),
- CONSTRAINT trips_management_fk FOREIGN KEY (user_id,live_event_id) REFERENCES user_live_status(user_id,live_event_id) ON DELETE RESTRICT
+ UNIQUE KEY trips_user_event (user_id,event_id), UNIQUE KEY trips_owner_identity (id,user_id,event_id), INDEX trips_event (event_id),
+ CONSTRAINT trips_management_fk FOREIGN KEY (user_id,event_id) REFERENCES user_event_status(user_id,event_id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE transportations (
  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, trip_id BIGINT UNSIGNED NOT NULL,
@@ -262,16 +273,16 @@ CREATE TABLE accommodations (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 CREATE TABLE todos (
  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
- user_id BIGINT UNSIGNED NOT NULL, live_event_id BIGINT UNSIGNED NOT NULL, trip_id BIGINT UNSIGNED NULL,
+ user_id BIGINT UNSIGNED NOT NULL, event_id BIGINT UNSIGNED NOT NULL, trip_id BIGINT UNSIGNED NULL,
  title VARCHAR(150) NOT NULL, due_date DATE NULL, is_completed TINYINT(1) NOT NULL DEFAULT 0,
  todo_type VARCHAR(10) NOT NULL, template_key VARCHAR(40) NULL,
  deleted_at DATETIME NULL,
  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
- UNIQUE KEY todo_template_once (user_id,live_event_id,template_key),
- INDEX todo_owner_live (user_id,live_event_id,deleted_at,is_completed), INDEX todo_live (live_event_id), INDEX todo_trip (trip_id,user_id,live_event_id),
- CONSTRAINT todo_management_fk FOREIGN KEY (user_id,live_event_id) REFERENCES user_live_status(user_id,live_event_id) ON DELETE RESTRICT,
- CONSTRAINT todo_trip_owner_fk FOREIGN KEY (trip_id,user_id,live_event_id) REFERENCES trips(id,user_id,live_event_id) ON DELETE RESTRICT
+ UNIQUE KEY todo_template_once (user_id,event_id,template_key),
+ INDEX todo_owner_event (user_id,event_id,deleted_at,is_completed), INDEX todo_event (event_id), INDEX todo_trip (trip_id,user_id,event_id),
+ CONSTRAINT todo_management_fk FOREIGN KEY (user_id,event_id) REFERENCES user_event_status(user_id,event_id) ON DELETE RESTRICT,
+ CONSTRAINT todo_trip_owner_fk FOREIGN KEY (trip_id,user_id,event_id) REFERENCES trips(id,user_id,event_id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 -- Phase 6：既存の予約金額DECIMAL(12,2)を維持し、本人の積立・支出を追加する。
 CREATE TABLE savings (
@@ -294,7 +305,7 @@ CREATE TABLE expenses (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
     user_id BIGINT UNSIGNED NOT NULL,
     oshi_id BIGINT UNSIGNED NULL,
-    live_event_id BIGINT UNSIGNED NULL,
+    event_id BIGINT UNSIGNED NULL,
     trip_id BIGINT UNSIGNED NULL,
     room_expense_id BIGINT UNSIGNED NULL,
     title VARCHAR(150) NOT NULL,
@@ -313,17 +324,17 @@ CREATE TABLE expenses (
     INDEX expenses_owner_category_date (user_id,category,expense_date),
     INDEX expenses_owner_effect_date (user_id,special_effect_eligible,expense_date),
     INDEX expenses_oshi (oshi_id),
-    INDEX expenses_live (live_event_id),
+    INDEX expenses_event (event_id),
     INDEX expenses_trip (trip_id),
     CONSTRAINT expenses_user_fk FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT expenses_oshi_fk FOREIGN KEY (oshi_id) REFERENCES oshis(id) ON DELETE RESTRICT,
-    CONSTRAINT expenses_live_fk FOREIGN KEY (live_event_id) REFERENCES live_events(id) ON DELETE RESTRICT,
+    CONSTRAINT expenses_event_fk FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE RESTRICT,
     CONSTRAINT expenses_trip_fk FOREIGN KEY (trip_id) REFERENCES trips(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 -- source_idは予約削除後も記録を保つため、交通・宿泊への外部キーにはしない。
 -- 反映時は必ずPHPで元予約→遠征→本人を検証する。room系テーブルはまだ作らない。
 -- 支払いと会計反映を分離する。既存金額・支出・集計の列は変更しない。
-ALTER TABLE user_live_status
+ALTER TABLE user_event_status
  ADD COLUMN ticket_amount DECIMAL(12,2) NULL,
  ADD COLUMN ticket_payment_status VARCHAR(10) NOT NULL DEFAULT 'unpaid',
  ADD COLUMN ticket_paid_date DATE NULL,
@@ -351,6 +362,6 @@ UPDATE accommodations item JOIN trips t ON t.id=item.trip_id
  JOIN expenses e ON e.user_id=t.user_id AND e.source_type='accommodation' AND e.source_id=item.id
  SET item.expense_id=e.id,item.updated_at=item.updated_at;
 -- 表示名ではなく固定キーで入金TODOを識別する。過去の正確な支払日は不明なのでNULLのまま。
-UPDATE user_live_status u JOIN todos td ON td.user_id=u.user_id AND td.live_event_id=u.live_event_id
+UPDATE user_event_status u JOIN todos td ON td.user_id=u.user_id AND td.event_id=u.event_id
  SET u.ticket_payment_status='paid',u.updated_at=u.updated_at
  WHERE td.template_key='payment' AND td.is_completed=1 AND td.deleted_at IS NULL;

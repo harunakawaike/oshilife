@@ -13,7 +13,7 @@ function runMoneyApi(string $route): void
     $raw = $read?$_GET:readJson();
     $pdo = database();
     if ($route==='source') {
-        $source = moneySource($pdo,$userId,liveChoice($raw,'source_type',['live_ticket'=>true,'transportation'=>true,'accommodation'=>true]),scheduleId($raw['source_id']??null));
+        $source = moneySource($pdo,$userId,eventChoice($raw,'source_type',['live_ticket'=>true,'transportation'=>true,'accommodation'=>true]),scheduleId($raw['source_id']??null));
         apiSuccess(['source'=>$source]);
     }
     if (in_array($parts[0],['savings','expenses'],true)) {
@@ -34,7 +34,7 @@ function runMoneyApi(string $route): void
     [$year,$oshiId] = moneyFilters($userId,$raw);
     if (in_array($route,['monthly','categories','by-oshi'],true)) apiSuccess(['items'=>moneyBreakdown($pdo,$userId,$year,$oshiId,$route)]);
     // 同じリクエスト内の年間・内訳は同じDB時点を読む。
-    $data = liveTransaction(function(PDO $pdo) use($userId,$year,$oshiId,$route) {
+    $data = eventTransaction(function(PDO $pdo) use($userId,$year,$oshiId,$route) {
         $summary = moneyDashboard($pdo,$userId,$year,$oshiId);
         if ($route==='special-effects') return moneySpecialEffects($summary['special_effect_eligible']);
         if ($route!=='dashboard') throw new ScheduleOperationException('APIが見つかりません。',404);

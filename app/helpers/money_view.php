@@ -1,11 +1,11 @@
 <?php
 /** money_view.php の役割：お金画面の本人確認・入力欄・記録の選択肢をまとめる。 */
 declare(strict_types=1);
-require_once __DIR__.'/live_view.php';
+require_once __DIR__.'/event_view.php';
 require_once PROJECT_ROOT.'/app/services/money_service.php';
 $pageTitle = 'お金管理';
 $pageStyle = 'money';
-$extraStyles = ['lives'];
+$extraStyles = ['events'];
 $pageScripts = ['money'];
 $activePage = 'profile';
 set_exception_handler(function(Throwable $error): void {
@@ -18,7 +18,7 @@ function moneyOshiOptions(int $userId,?array $record = null): array
     $options = [''=>'全推し共通・未指定'];
     foreach (findMyOshis(database(),$userId) as $oshi) $options[$oshi['id']] = $oshi['emoji'].' '.$oshi['name'];
     if (!empty($record['oshi_id']) && !isset($options[$record['oshi_id']])) {
-        $oshi = liveQuery(database(),'SELECT name,emoji FROM oshis WHERE id=?',[$record['oshi_id']])->fetch();
+        $oshi = eventQuery(database(),'SELECT name,emoji FROM oshis WHERE id=?',[$record['oshi_id']])->fetch();
         if ($oshi) $options[$record['oshi_id']] = $oshi['emoji'].' '.$oshi['name'].'（この記録の推し）';
     }
     return $options;
@@ -31,5 +31,5 @@ function moneyFixed(string $name,string $label,mixed $value,string $display): vo
 /** 保存ボタンに読み上げ可能な状態表示を添える。 */
 function moneySubmit(): void
 {
-    echo '<div class="live-wide"><p class="money-message" role="status"></p><button class="button primary" type="submit">登録内容を保存</button></div>';
+    echo '<div class="event-wide"><p class="money-message" role="status"></p><button class="button primary" type="submit">登録内容を保存</button></div>';
 }

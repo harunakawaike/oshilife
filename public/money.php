@@ -7,10 +7,10 @@ $options[''] = 'すべての推し';
 require PROJECT_ROOT.'/includes/header.php';
 ?>
 <a href="<?= e(appUrl('profile.php')) ?>">← マイページ</a>
-<div class="page-heading"><div><p class="eyebrow">MY YEAR, MY FANDOM</p><h1>お金管理</h1></div><div class="live-actions"><a class="button primary" href="<?= e(appUrl('saving_form.php')) ?>">＋ 積立</a><a class="button secondary" href="<?= e(appUrl('expense_form.php')) ?>">＋ 支出</a></div></div>
+<div class="page-heading"><div><p class="eyebrow">MY YEAR, MY FANDOM</p><h1>お金管理</h1></div><div class="event-actions"><a class="button primary" href="<?= e(appUrl('saving_form.php')) ?>">＋ 積立</a><a class="button secondary" href="<?= e(appUrl('expense_form.php')) ?>">＋ 支出</a></div></div>
 <form id="money-filter" class="money-filter">
 <label>対象年<input type="number" name="year" min="1000" max="9998" step="1" required value="<?= $year ?>"></label>
-<?php liveSelect('oshi_id','対象の推し',$options,$oshiId??''); ?>
+<?php eventSelect('oshi_id','対象の推し',$options,$oshiId??''); ?>
 <button class="button secondary" type="submit">表示する</button>
 </form>
 <p id="money-status" role="status"></p>

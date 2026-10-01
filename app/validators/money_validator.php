@@ -1,7 +1,7 @@
 <?php
-/** money_validator.php の役割：お金の入力値・対象年・本人の推しとライブの整合を検証する。 */
+/** money_validator.php の役割：お金の入力値・対象年・本人の推しとイベントの整合を検証する。 */
 declare(strict_types=1);
-require_once __DIR__.'/live_validator.php';
+require_once __DIR__.'/event_validator.php';
 require_once __DIR__.'/../../config/money.php';
 /** 未選択をNULLとして扱い、配列や負数をIDとして受け入れない。 */
 function moneyOptionalId(mixed $value): ?int
@@ -23,28 +23,28 @@ function moneyYear(mixed $value): int
 function validateMoneyOshi(PDO $pdo, int $userId, ?int $oshiId, ?array $existing): void
 {
     if ($oshiId===null || ($existing && (int)$existing['oshi_id']===$oshiId)) return;
-    if (!liveQuery($pdo,'SELECT id FROM user_oshis WHERE user_id=? AND oshi_id=?',[$userId,$oshiId])->fetch()) {
+    if (!eventQuery($pdo,'SELECT id FROM user_oshis WHERE user_id=? AND oshi_id=?',[$userId,$oshiId])->fetch()) {
         throw new ScheduleOperationException('対象の推しを先に推し管理へ登録してください。',422);
     }
 }
 /** 共通の金額とメモを検証する。予約と同じ小数2桁を許可し、丸めて切り捨てない。 */
 function validateMoneyInput(array $raw, string $table): array
 {
-    $amount = liveAmount($raw);
+    $amount = eventAmount($raw);
     if ($amount===null) throw new ScheduleOperationException('金額を入力してください。',422);
-    $values = ['oshi_id'=>moneyOptionalId($raw['oshi_id']??null),'amount'=>$amount,'note'=>liveText($raw,'note','メモ',3000)];
+    $values = ['oshi_id'=>moneyOptionalId($raw['oshi_id']??null),'amount'=>$amount,'note'=>eventText($raw,'note','メモ',3000)];
     $date = $table==='savings'?'saving_date':'expense_date';
-    $values[$date] = liveDate($raw,$date);
+    $values[$date] = eventDate($raw,$date);
     moneyYear(substr($values[$date],0,4));
     if ($table==='savings') return $values;
-    $category = liveChoice($raw,'category',MONEY_CATEGORIES);
+    $category = eventChoice($raw,'category',MONEY_CATEGORIES);
     $eligible = array_key_exists('special_effect_eligible',$raw) ? scheduleBoolean($raw['special_effect_eligible']) : MONEY_CATEGORIES[$category]['eligible'];
     if ($eligible===null) throw new ScheduleOperationException('特効換算対象を確認してください。',422);
     // 手数料・交通・宿泊・周辺費用は直接の推し活支出ではないので、改ざんされたtrueも拒否する。
     if ($eligible && !MONEY_CATEGORIES[$category]['eligible']) throw new ScheduleOperationException('手数料・交通・宿泊・周辺費用は特効換算の対象外です。',422);
     return $values + [
-        'title'=>liveText($raw,'title','支出名',150,true),'category'=>$category,
-        'live_event_id'=>moneyOptionalId($raw['live_event_id']??null),
+        'title'=>eventText($raw,'title','支出名',150,true),'category'=>$category,
+        'event_id'=>moneyOptionalId($raw['event_id']??null),
         'trip_id'=>moneyOptionalId($raw['trip_id']??null),'special_effect_eligible'=>(int)$eligible,
     ];
 }

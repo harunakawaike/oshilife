@@ -1,5 +1,5 @@
 <?php
-/** delete.php の役割：ライブ・遠征のlives/todos/delete処理を認証付きで実行する。 */
+/** delete.php の役割：旧ライブAPIから新イベントAPIへ渡す互換入口。 */
 declare(strict_types=1);
-require_once __DIR__ . '/../../../app/helpers/live_api.php';
-runLiveApi('lives/todos/delete');
+require_once __DIR__ . '/../../../app/helpers/legacy_event_api.php';
+require __DIR__ . '/../../events/todos/delete.php';

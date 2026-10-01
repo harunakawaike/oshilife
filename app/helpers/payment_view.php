@@ -29,13 +29,13 @@ function renderPaymentImport(array $source): void
     echo '</div>';
 }
 /** チケットは共有公演ではなく本人の管理IDを使うので、金額・支払い状況を共有しない。 */
-function renderTicketPayment(int $userId,array $live): void
+function renderTicketPayment(int $userId,array $event): void
 {
-    if (empty($live['user_live_status_id'])) return;
-    $source = moneySource(database(),$userId,'live_ticket',(int)$live['user_live_status_id']);
+    if (empty($event['user_event_status_id'])) return;
+    $source = moneySource(database(),$userId,'live_ticket',(int)$event['user_event_status_id']);
     echo '<div class="todo-ticket-payment" aria-label="チケットのお支払い">';
-    echo '<p>チケット代：'.e(paymentYen($source['amount'])).'</p>';
-    echo '<p>'.e(PAYMENT_STATUSES[$source['payment_status']]).'</p>';
+    echo '<p>チケット・入場料：'.e(paymentYen($source['amount'])).'</p>';
+    echo '<p>'.e($source['payment_status']==='not_required' ? '支払い不要（0円）' : ($source['amount']===null ? '金額未設定' : PAYMENT_STATUSES[$source['payment_status']])).'</p>';
     renderPaymentImport($source);
     echo '</div>';
 }

@@ -1,5 +1,5 @@
 <?php
-/** status.php の役割：ライブ・遠征のlives/status処理を認証付きで実行する。 */
+/** status.php の役割：旧ライブAPIから新イベントAPIへ渡す互換入口。 */
 declare(strict_types=1);
-require_once __DIR__ . '/../../app/helpers/live_api.php';
-runLiveApi('lives/status');
+require_once __DIR__ . '/../../app/helpers/legacy_event_api.php';
+require __DIR__ . '/../events/status.php';

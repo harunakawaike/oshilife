@@ -1,5 +1,5 @@
 <?php
-/** list.php の役割：ライブ・遠征のvenues/list処理を認証付きで実行する。 */
+/** list.php の役割：イベント・遠征のvenues/list処理を認証付きで実行する。 */
 declare(strict_types=1);
-require_once __DIR__ . '/../../app/helpers/live_api.php';
-runLiveApi('venues/list');
+require_once __DIR__ . '/../../app/helpers/event_api.php';
+runEventApi('venues/list');

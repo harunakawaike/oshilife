@@ -146,10 +146,10 @@ function customizeSchedule(int $userId, int $id, array $input): void
     } catch (Throwable $exception) { $pdo->rollBack(); throw $exception; }
 }
 
-/** 連携公演の公開範囲や開催状態が食い違わないよう、共有元の変更はライブ管理へ集約する。 */
+/** 連携公演の公開範囲や開催状態が食い違わないよう、共有元の変更はイベント管理へ集約する。 */
 function requireUnlinkedSchedule(PDO $pdo, int $id): void
 {
-    if (scheduleQuery($pdo,'SELECT id FROM live_events WHERE schedule_id=:id',['id'=>$id])->fetch()) {
-        throw new ScheduleOperationException('この予定はライブ管理から編集・中止にしてください。',409);
+    if (scheduleQuery($pdo,'SELECT id FROM events WHERE schedule_id=:id',['id'=>$id])->fetch()) {
+        throw new ScheduleOperationException('この予定はイベント管理から編集・中止にしてください。',409);
     }
 }
