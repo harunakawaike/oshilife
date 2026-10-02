@@ -4,7 +4,8 @@ declare(strict_types=1);
 const EVENT_STATUSES = ['scheduled'=>'開催予定','postponed'=>'延期','cancelled'=>'中止','completed'=>'終了'];
 const APPLICATION_STATUSES = ['not_applied'=>'未申込','applying'=>'手続き中','applied'=>'申込済み','not_required'=>'申込不要'];
 const LOTTERY_STATUSES = ['not_applicable'=>'抽選対象外','pending'=>'結果待ち','won'=>'当選','lost'=>'落選'];
-const ENTRY_METHODS = ['lottery'=>'抽選','first_come'=>'先着','reservation'=>'予約','no_application'=>'申込不要','unknown'=>'未確認'];
+// ファンクラブ先行は入力用の選択肢。保存時は既存の抽選＋FCへ正規化する。
+const ENTRY_METHODS = ['fanclub_presale'=>'ファンクラブ先行受付','lottery'=>'抽選','first_come'=>'先着','reservation'=>'予約','no_application'=>'申込不要','unknown'=>'未確認'];
 const PARTICIPATION_STATUSES = ['considering'=>'検討中','confirmed'=>'参加確定','not_attending'=>'不参加','cancelled'=>'取消'];
 const SALES_TYPES = ['fanclub'=>'FC','general_sale'=>'一般販売','production_release'=>'制作開放','official_presale'=>'公式先行','other'=>'その他','none'=>'なし'];
 const TRIP_TYPES = ['local'=>'近場','trip'=>'遠征'];

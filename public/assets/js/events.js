@@ -86,10 +86,11 @@
         const amount=management.querySelector('[name="ticket_amount"]');
         const show=(selector,visible)=>{const box=management.querySelector(selector);box.hidden=!visible;box.querySelectorAll('input,select').forEach(field=>field.disabled=!visible);};
         const refresh=()=>{
+            const fanclub=method.value==='fanclub_presale';
             const noApplication=method.value==='no_application';
             show('[data-management-application]',!noApplication);
-            show('[data-management-lottery]',method.value==='lottery');
-            show('[data-management-sales]',!noApplication && method.value!=='unknown');
+            show('[data-management-lottery]',method.value==='lottery' || fanclub);
+            show('[data-management-sales]',!fanclub && !noApplication && method.value!=='unknown');
             const free=amount.value.trim()!=='' && Number(amount.value)===0;
             show('[data-management-payment]',amount.value.trim()!=='' && !free);
             management.querySelector('[data-payment-free]').hidden=!free;
@@ -98,7 +99,11 @@
             app.parentElement.firstChild.textContent=method.value==='reservation'?'予約状況':method.value==='first_come'?'申込 / 購入状況':'申込状況';
             app.querySelector('[value="applied"]').textContent=method.value==='reservation'?'予約済み':'申込済み';
         };
-        method.addEventListener('change',refresh);amount.addEventListener('input',refresh);refresh();
+        let previousMethod=method.value;
+        method.addEventListener('change',()=>{
+            if(previousMethod==='fanclub_presale' && method.value!=='fanclub_presale') management.querySelector('[name="sales_type"]').value='none';
+            previousMethod=method.value;refresh();
+        });amount.addEventListener('input',refresh);refresh();
     }
     const search=document.getElementById('event-search');
     if (search) {

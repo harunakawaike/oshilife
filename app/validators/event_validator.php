@@ -118,6 +118,8 @@ function validateEventManagement(array $raw,array $existing): array
     // 旧クライアントは参加欄を持たないため、旧当落操作だけは従来の意図へ変換する。
     if ($legacy) $participation=match($oldLottery) {'won'=>'confirmed','lost'=>'not_attending',default=>'considering'};
     $sales=array_key_exists('sales_type',$raw) ? eventChoice($raw,'sales_type',SALES_TYPES) : ($legacySales ? $oldLottery : ($existing['sales_type']??'none'));
+    // 新しい選択肢でもDBの受付方式と販売区分を分離したまま保持する。
+    if ($entry==='fanclub_presale') { $entry='lottery';$sales='fanclub'; }
     if ($entry!=='lottery') $lottery='not_applicable';
     elseif ($lottery==='not_applicable') $lottery='pending';
     if ($entry==='no_application') { $application='not_required';$sales='none'; }

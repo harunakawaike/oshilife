@@ -34,7 +34,7 @@ try {
             if(input.managementExpect?.[page]) {
                 const {result:management}=await call('Runtime.evaluate',{expression:`JSON.stringify({entry:document.querySelector('[name="entry_method"]').value,lottery:!document.querySelector('[data-management-lottery]').hidden,application:!document.querySelector('[data-management-application]').hidden,payment:!document.querySelector('[data-management-payment]').hidden,free:!document.querySelector('[data-payment-free]').hidden,sales:!document.querySelector('[data-management-sales]').hidden})`,returnByValue:true});
                 const actual=JSON.parse(management.value),expected=input.managementExpect[page];
-                assert.equal(actual.entry,expected.entry);assert.equal(actual.lottery,expected.entry==='lottery');
+                assert.equal(actual.entry,expected.entry);assert.equal(actual.lottery,['lottery','fanclub_presale'].includes(expected.entry));
                 assert.equal(actual.application,expected.entry!=='no_application');assert.equal(actual.free,expected.free);
                 if(expected.free){assert.equal(actual.payment,false);assert.equal(actual.sales,false);}
             }

@@ -11,10 +11,10 @@ require PROJECT_ROOT.'/includes/header.php';
 <p class="event-date"><?= e($event['event_date']) ?> · <?= e($event['venue_name']) ?></p><p><?= e($event['prefecture'].' '.$event['address']) ?></p>
 <div class="event-time"><span>開場 <?= e($event['open_time']??'未定') ?></span><span>開始 <?= e($event['start_time']??'未定') ?></span><span>終了予定 <?= e($event['end_time']??'未定') ?></span></div>
 <p class="event-note"><?= e($event['note']) ?></p><div class="event-actions">
-<?php if ($event['is_owner']): ?><a class="button secondary" href="<?= e(appUrl('event_form.php?id='.$event['id'])) ?>">共有情報を編集</a><?php endif; ?>
+<?php if ($event['is_owner']): ?><a class="button secondary" href="<?= e(appUrl('event_form.php?id='.$event['id'])) ?>">共有情報を編集</a> <a class="button secondary" href="<?= e(appUrl('event_form.php?copy_from='.$event['id'])) ?>">コピーして別日程を登録</a><?php endif; ?>
 <a href="<?= e(appUrl('schedule_detail.php?id='.$event['schedule_id'])) ?>">カレンダーの予定・修正提案を見る →</a></div></section>
 <section class="card event-section"><h2>自分の管理 <small>自分だけ</small></h2><form class="event-form event-fields" data-api="events/status/update" data-reload="true"><input type="hidden" name="event_id" value="<?= (int)$event['id'] ?>">
-<?php eventSelect('entry_method','受付方式',ENTRY_METHODS,$event['entry_method']??'unknown'); ?>
+<?php eventSelect('entry_method','受付方式',ENTRY_METHODS,($event['entry_method']==='lottery' && $event['sales_type']==='fanclub')?'fanclub_presale':($event['entry_method']??'unknown')); ?>
 <div data-management-application><?php eventSelect('application_status','申込状況',APPLICATION_STATUSES,$event['application_status']??'not_applied'); ?></div>
 <div data-management-lottery><?php eventSelect('lottery_status','抽選結果',array_diff_key(LOTTERY_STATUSES,['not_applicable'=>true]),$event['lottery_status']??'pending'); ?></div>
 <?php eventSelect('participation_status','参加状況',PARTICIPATION_STATUSES,$event['participation_status']??'considering'); ?>

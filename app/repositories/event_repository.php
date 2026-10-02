@@ -27,7 +27,7 @@ function eventRows(PDO $pdo, int $userId, string $where='1=1', array $values=[],
     foreach ($rows as &$row) {
         $row['event_type_label']=EVENT_TYPES[$row['event_type']] ?? $row['event_type'];
         $row['status_label']=EVENT_STATUSES[$row['status']];
-        $row['entry_label']=ENTRY_METHODS[$row['entry_method']]??null;
+        $row['entry_label']=($row['entry_method']==='lottery' && $row['sales_type']==='fanclub') ? ENTRY_METHODS['fanclub_presale'] : (ENTRY_METHODS[$row['entry_method']]??null);
         $row['participation_label']=PARTICIPATION_STATUSES[$row['participation_status']]??null;
         $row['sales_label']=SALES_TYPES[$row['sales_type']]??null;
         $row['application_label']=APPLICATION_STATUSES[$row['application_status']]??null;
