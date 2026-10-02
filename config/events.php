@@ -17,4 +17,5 @@ const TRIP_TODOS = ['payment'=>'入金 / 支払い確認','transport'=>'交通�
 const PAYMENT_STATUSES = ['unpaid'=>'支払い未完了','paid'=>'支払い済み'];
 
 // 予定カテゴリとは別。登録・編集画面とAPIで同じ許可値を使用する。
-const EVENT_TYPES = ['live'=>'LIVE','performance'=>'公演','event'=>'イベント','sports'=>'試合','exhibition'=>'展覧会','other'=>'その他'];
+// 既存データ・APIとの互換性のためsportsという保存値は維持し、表示名を「舞台」にする。
+const EVENT_TYPES = ['live'=>'LIVE','performance'=>'公演','event'=>'イベント','sports'=>'舞台','exhibition'=>'展覧会','other'=>'その他'];
