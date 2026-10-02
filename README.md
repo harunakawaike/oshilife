@@ -1,4 +1,43 @@
-# Oshilife v2 — Phase 6 / イベント管理 Step 2
+# Oshilife v2 — Phase 6 / イベント管理 Step 3-1
+
+## イベント管理 Step 3-1：同行者（自分だけ）
+
+イベント詳細の「同行者を管理する」から、同行者の名前・メモを追加・編集できます。
+利用終了にすると通常一覧から隠れ、記録を残したまま再開できます。同名登録可能で、自分はイベントごとに1人です。
+本人の「自分の管理」を保存したイベントで利用でき、他ユーザーには共有されません。
+
+011_event_participants.sqlは適用済みです。既存21テーブルを変更せず、event_participantsだけを追加しました。
+共同支出・立替・精算・お金管理との連携は今回の対象外です。
+バックアップ・復元・migration・復旧方法・テスト結果は[Step 3-1実装報告](docs/EVENT_STEP3_1.md)を参照してください。
+
+### 主要ファイルの役割（Step 3-1）
+
+| ファイル / ディレクトリ | 役割 |
+|---|---|
+| public/event_companions.php | 同行者一覧と追加・編集・利用終了・再開の画面 |
+| public/event_detail.php | 同行者画面への本人専用の入口 |
+| public/api/events/companions/・api/events/companions/ | 同行者APIの公開入口と操作ごとの入口 |
+| app/helpers/participant_api.php | ログイン・CSRF・入力ID・JSON応答 |
+| app/services/participant_service.php | 自分の一意性、入力検証、保存・利用終了 |
+| app/repositories/participant_repository.php | 所有ユーザーとイベントを限定したDB取得 |
+| database/migrations/011_event_participants.sql | 新テーブル・INDEX・制約の追加 |
+
+### 処理の流れ（Step 3-1）
+
+```text
+同行者画面で保存
+↓ 既存events.jsが入力をJSONにして送信
+同行者API → ログイン・CSRF確認
+↓
+本人のイベント管理を確認 → 自分の重複・参加者の所有者を確認
+↓
+event_participantsだけに保存 → JSON応答 → 画面を再表示
+```
+
+画面表示だけではDBに書き込みません。自分の行は初回の保存時に作成します。
+APIは画面から処理を依頼する入口です。所有者はセッション（サーバーのログイン記録）から判断し、SQLへの値はプリペアドステートメントで安全に渡します。
+以下のStep 2以前の章は既存機能と導入履歴です。現在の参加判定はStep 2の「参加確定」が基準です。
+
 
 
 ## イベント管理 Step 2：参加確定から準備を始める

@@ -24,6 +24,11 @@ require PROJECT_ROOT.'/includes/header.php';
 <p class="caption" data-payment-free hidden>0円のため支払い不要です。参加確定すると準備TODOを利用できます。</p>
 <?php eventMemo($event['personal_note']);eventSubmit(); ?>
 </form><p class="caption">保存すると自分のカレンダーにも追加されます。参加確定にするとTODOが作られます。抽選結果と参加状況は別々に選んでください。</p></section>
+<section class="card event-section"><h2>同行者 <small>自分だけ</small></h2>
+<?php if ($event['user_event_status_id'] !== null): ?>
+<a class="button secondary" href="<?= e(appUrl('event_companions.php?event_id='.$event['id'])) ?>">同行者を管理する →</a>
+<?php else: ?><p class="caption">上の「自分の管理」を保存すると、同行者を登録できます。</p><?php endif; ?>
+</section>
 <?php if ($event['application_status']!==null) eventTodoSection((int)$user['id'],(int)$event['id']); ?>
 <?php if ($event['trip_id']): ?><a class="button primary" href="<?= e(appUrl('trip_detail.php?id='.$event['trip_id'])) ?>">遠征まとめを見る →</a>
 <?php elseif ($event['trip_type']==='trip' && $event['participation_status']==='confirmed'): ?>
