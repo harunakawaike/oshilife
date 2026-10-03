@@ -1,0 +1,15 @@
+/* 連番ルームはイベント配下の機能。既存テーマの変数を使い、スマホは縦並びにする。 */
+.room-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;margin:24px 0}
+.room-card{min-width:0;overflow-wrap:anywhere}.room-wide{grid-column:1/-1}.room-name{overflow-wrap:anywhere}
+.room-card h2{font-size:1.3rem}.room-people{list-style:none;padding:0;display:grid;gap:16px}
+.room-people li{display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;justify-content:space-between}.room-people span{overflow-wrap:anywhere;min-width:0}
+.room-actions{display:flex;flex-wrap:wrap;gap:16px}.room-action{margin-top:12px;min-width:0}.room-action .event-message:empty{display:none}
+.room-invitation,.room-event{padding:16px 0;border-bottom:1px solid var(--border);overflow-wrap:anywhere;min-width:0}
+.room-card details{margin-top:20px}.room-card summary{cursor:pointer;font-weight:600;padding:12px 0}
+@media(max-width:640px){.room-grid{grid-template-columns:1fr}.room-actions{display:grid;grid-template-columns:1fr}.room-actions .button{width:100%}}
+
+/* 長い招待URLでもスマホの幅を広げず、コピーの操作領域を確保する。 */
+#room-link-result input { display:block; width:100%; min-width:0; margin:.5rem 0; }
+#room-copy-link { min-height:44px; margin-bottom:.5rem; }
+.room-link { padding:1rem 0; border-top:1px solid var(--border); overflow-wrap:anywhere; }
+.room-join { max-width:42rem; margin:2rem auto; }

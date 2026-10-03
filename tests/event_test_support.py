@@ -74,6 +74,9 @@ def db(mode):
     if($argv[2]==='cleanup') {
         $p->beginTransaction();
         foreach($ids as $id) {
+            // このテストが作成したownerのルームだけを、外部キーの子→親の順で清掃する。
+            foreach(['room_invite_links','room_events','room_invitations','room_members'] as $table) { $s=$p->prepare('DELETE child FROM '.$table.' child JOIN rooms r ON r.id=child.room_id WHERE r.owner_user_id=?');$s->execute([$id]); }
+            $s=$p->prepare('DELETE FROM rooms WHERE owner_user_id=?');$s->execute([$id]);
             foreach(['event_participants','expenses','savings','todos','trips','user_event_status','user_schedules'] as $table) { $s=$p->prepare('DELETE FROM '.$table.' WHERE user_id=?');$s->execute([$id]); }
             foreach(['notifications','reactions','correction_requests'] as $table) { $s=$p->prepare('DELETE child FROM '.$table.' child JOIN schedules s ON s.id=child.schedule_id WHERE s.created_by_user_id=?');$s->execute([$id]); }
         }

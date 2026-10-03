@@ -6,6 +6,7 @@ $event=findEvent(database(),(int)$user['id'],eventPageId());$pageTitle=$event['t
 require PROJECT_ROOT.'/includes/header.php';
 ?>
 <a href="<?= e(appUrl('events.php')) ?>">← イベント一覧</a>
+<p><a class="button secondary" href="<?= e(appUrl('rooms.php')) ?>">連番ルーム →</a></p>
 <section class="card event-section"><span class="tag"><?= e($event['event_type_label']) ?></span><p><?= e($event['oshi_emoji'].' '.$event['oshi_name']) ?> · 共有情報</p><h1><?= e($event['title']) ?></h1>
 <p class="event-state state-<?= e($event['status']) ?>"><?= e(EVENT_STATUSES[$event['status']]) ?></p>
 <p class="event-date"><?= e($event['event_date']) ?> · <?= e($event['venue_name']) ?></p><p><?= e($event['prefecture'].' '.$event['address']) ?></p>

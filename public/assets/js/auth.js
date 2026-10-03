@@ -15,8 +15,8 @@ async function handleAuthSubmit(event) {
     button.textContent = '送信しています…';
     const input = Object.fromEntries(new FormData(form).entries());
     try {
-        await apiRequest(`api/auth/${form.dataset.action}.php`, 'POST', input);
-        const destination = form.dataset.action === 'register' ? 'login.php?registered=1' : 'home.php';
+        const result = await apiRequest(`api/auth/${form.dataset.action}.php`, 'POST', input);
+        const destination = form.dataset.action === 'register' ? 'login.php?registered=1' : (result.redirect || 'home.php');
         window.location.assign(appUrl(destination));
     } catch (error) {
         message.textContent = error.message;
