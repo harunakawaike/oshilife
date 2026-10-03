@@ -14,6 +14,8 @@ require PROJECT_ROOT.'/includes/header.php';
 <a href="<?= e(appUrl('rooms.php')) ?>">← 連番ルーム一覧</a>
 <h1 class="room-name"><?= e($room['name']) ?></h1>
 <?php if (!$active): ?><p class="card">終了したルームです。メンバーとイベントの履歴を閲覧できます。</p><?php endif; ?>
+<section class="card room-card"><h2>お金</h2><p>ルームのメンバーと支払者・負担額を共有できます。</p>
+<a class="button secondary" href="<?= e(appUrl('room_expenses.php?room_id='.$roomId)) ?>">共同支出を見る →</a></section>
 <div class="room-grid">
 <section class="card room-card"><h2>メンバー</h2><ul class="room-people">
 <?php foreach($members as $member): ?><li><span><?= e($member['display_name']) ?><?= $member['is_me']?'（自分）':'' ?></span><small><?= $member['role']==='owner'?'owner（作成者）':'メンバー' ?></small></li><?php endforeach; ?>

@@ -1,0 +1,25 @@
+/* 共同支出は既存テーマ色を使う。支払・登録・負担を分け、スマホでも金額と名前を読みやすくする。 */
+.room-expense-heading,.room-expense-actions { display:flex; flex-wrap:wrap; gap:16px; align-items:center; margin:20px 0; }
+.card .room-expense-total { font-size:2rem; font-weight:700; margin:16px 0; }
+.room-expense-facts { display:grid; gap:10px; }
+.room-expense-facts div { display:grid; grid-template-columns:5rem minmax(0,1fr); gap:12px; }
+.room-expense-facts dt { color:var(--muted); }
+.room-expense-facts dd { margin:0; overflow-wrap:anywhere; }
+.room-expense-shares { list-style:none; padding:0; display:grid; gap:12px; }
+.room-expense-shares li { display:flex; gap:16px; justify-content:space-between; align-items:baseline; }
+.room-expense-shares span { min-width:0; overflow-wrap:anywhere; }.room-expense-shares strong { white-space:nowrap; }
+.room-expense-note { white-space:pre-wrap; overflow-wrap:anywhere; }
+.room-expense-detail { max-width:800px; margin-top:24px; }
+.room-expense-members { min-width:0; border:1px solid var(--border); border-radius:16px; padding:20px; }
+.room-expense-member { display:grid; grid-template-columns:minmax(0,1fr) minmax(140px,220px); gap:20px; align-items:center; margin:16px 0; }
+.room-expense-select { display:flex; align-items:center; gap:12px; overflow-wrap:anywhere; min-width:0; }
+.room-expense-select input { width:22px; height:22px; flex:0 0 22px; }
+.room-expense-input input { width:100%; min-width:0; }
+#room-expense-split { min-height:44px; }
+#room-expense-balance { overflow-wrap:anywhere; }
+@media(max-width:640px) {
+    .room-expense-member { grid-template-columns:minmax(0,1fr); gap:8px; padding:12px 0; border-bottom:1px solid var(--border); }
+    .room-expense-actions { align-items:stretch; flex-direction:column; }
+    .room-expense-actions .button { width:100%; }
+    .room-expense-members { padding:16px; }
+}
