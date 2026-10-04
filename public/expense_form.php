@@ -25,6 +25,7 @@ $pageTitle = $source?'支払いをお金管理に反映':($record?'支出を編�
 require PROJECT_ROOT.'/includes/header.php';
 ?>
 <a href="<?= e(appUrl('money.php')) ?>">← お金管理</a><h1><?= e($pageTitle) ?></h1>
+<?php if (($values['source_type']??'')==='room_expense'): ?><p class="notice">連番ルームから反映した本人負担分です。</p><?php endif; ?>
 <?php if ($imported): ?><p>内容を確認して保存してください。元の支払い情報や予約を変更・削除しても、この支出は自動変更されません。反映後の金額変更や取消はお金管理で行えます。</p><?php endif; ?>
 <?php if (($source['reservation_status']??'')==='cancelled'): ?><p class="notice">この予約はキャンセル済みです。キャンセル料など、実際に負担する金額と日付を確認してください。</p><?php endif; ?>
 <form class="money-form event-fields card" data-kind="expenses" data-action="<?= $record?'update':'create' ?>">

@@ -39,8 +39,15 @@ function saveMoneyRecord(int $userId,string $table,array $raw,?int $id): int
                 validateMoneyOshi($pdo,$userId,$values['oshi_id'],$existing);
             } else {
                 $sourceType = $existing['source_type'] ?? ($raw['source_type']??'manual');
-                if (!in_array($sourceType,['manual','live_ticket','transportation','accommodation'],true)) throw new ScheduleOperationException('支出の反映元が正しくありません。',422);
-                if ($sourceType==='manual') {
+                if (!in_array($sourceType,['manual','live_ticket','transportation','accommodation','room_expense'],true)) throw new ScheduleOperationException('支出の反映元が正しくありません。',422);
+                if ($sourceType==='room_expense') {
+                    // 新規反映は本人負担・精算状態を検証する専用APIだけ。既存個人支出の編集は退出後も可能。
+                    if (!$existing) throw new ScheduleOperationException('連番ルームから内容を確認して反映してください。',422);
+                    foreach (['oshi_id','event_id','trip_id','category','special_effect_eligible'] as $key) {
+                        if ((string)$values[$key] !== (string)$existing[$key]) throw new ScheduleOperationException('反映元の関連項目は変更できません。',422);
+                    }
+                    $values += ['source_type'=>'room_expense','source_id'=>$existing['source_id'],'room_expense_id'=>$existing['room_expense_id']];
+                } elseif ($sourceType==='manual') {
                     if (!empty($raw['source_id']) || !empty($raw['room_expense_id'])) throw new ScheduleOperationException('手入力の支出に反映元IDは指定できません。',422);
                     validateMoneyLinks($pdo,$userId,$values,$existing);
                     $values += ['source_type'=>'manual','source_id'=>null,'room_expense_id'=>null];

@@ -48,6 +48,23 @@
         const button=event.target.closest('button');if(!button)return;
         if(button.matches('[data-expense-form]'))openForm(button);
         if(button.matches('[data-refresh-money]'))refreshMoney();
+        if(button.matches('[data-personal-action]')) {
+            if(button.disabled)return;
+            button.disabled=true;
+            try {
+                const preview=await apiRequest(`api/rooms/expenses/personal.php?room_id=${roomId}&id=${button.dataset.personalId}`);
+                const action=button.dataset.personalAction;
+                if(!preview[`can_${action}`])throw new Error('状態が変わりました。表示を更新して内容を確認してください。');
+                const value=preview.values;
+                const current=preview.existing?`\n現在のお金管理：¥${Number(preview.existing.amount).toLocaleString('ja-JP')}`:'';
+                const title=action==='delete'?'この支出を自分のお金管理から削除しますか？':action==='update'?'お金管理を次の内容に更新しますか？':'この共同支出を自分のお金管理に反映しますか？';
+                if(window.confirm(`${title}\n\n${value.title}\nあなたの負担：¥${Number(value.amount).toLocaleString('ja-JP')}\nカテゴリ：${preview.category_label}\n日付：${value.expense_date}\n特効換算：${value.special_effect_eligible?'対象':'対象外'}${current}`)) {
+                    await apiRequest('api/rooms/expenses/personal.php','POST',{room_id:roomId,id:button.dataset.personalId,action,confirmation_token:preview.confirmation_token});
+                    await refreshMoney(button.dataset.personalId);
+                }
+            }catch(error){document.getElementById('room-money-message').textContent=error.message;}
+            finally{button.disabled=false;}
+        }
         if(button.matches('[data-mark-settled]')) {
             if(button.disabled)return;
             button.disabled=true;

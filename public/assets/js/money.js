@@ -113,6 +113,7 @@
                 data.items.forEach(item=>{
                     const row=element('article','','money-record');
                     const link=element('a',kind==='savings'?'積立を編集':item.title);
+                    if(item.source_type==='room_expense')row.append(element('p','連番ルームから反映'));
                     link.href=appUrl(`${kind==='savings'?'saving':'expense'}_form.php?id=${item.id}`);
                     row.append(link,element('strong',yen(item.amount)),element('p',`${item.saving_date||item.expense_date} · ${item.oshi_name||'全推し共通・未指定'}`,'caption'));
                     list.append(row);
