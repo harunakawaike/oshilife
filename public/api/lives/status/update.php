@@ -1,4 +1,5 @@
 <?php
 /** update.php の役割：公開URLから旧API互換入口を呼び出す。 */
 declare(strict_types=1);
-require __DIR__ . '/../../../../api/lives/status/update.php';
+require_once __DIR__ . '/../../../bootstrap.php';
+require APP_PRIVATE_ROOT . '/api/lives/status/update.php';

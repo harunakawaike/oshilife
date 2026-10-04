@@ -1,6 +1,7 @@
 <?php
 /** room_expense_form.php の役割：参加メンバーから支払者・負担者を選び、整数円の共同支出を登録・編集する。 */
-require_once __DIR__.'/../app/helpers/room_expense_view.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/app/helpers/room_expense_view.php';
 $roomId=eventPageId('room_id');$userId=(int)$user['id'];$room=requireRoom(database(),$userId,$roomId,false,true);
 $id=isset($_GET['id'])?eventPageId():null;$expense=$id===null?null:findRoomExpense(database(),$userId,$roomId,$id);
 if ($expense) requireRoomExpenseEditor($room,$expense,$userId);

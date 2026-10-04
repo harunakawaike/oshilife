@@ -1,7 +1,8 @@
 <?php
 /** login.php の役割：おかえりなさいの認証フォームを表示する。送信はauth.jsからJSON APIへ行う。 */
 declare(strict_types=1);
-require_once __DIR__ . '/../config/app.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/config/app.php';
 if (isset($_SESSION['user_id'])) {
     redirectTo('home.php');
 }

@@ -1,7 +1,8 @@
 <?php
 /** calendar.php の役割：月間カレンダーと日別予定をAPIで表示する。スマホ縦型・PC横並び。 */
 declare(strict_types=1);
-require_once __DIR__ . '/../middleware/auth.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/middleware/auth.php';
 $user = requireAuth();
 require_once PROJECT_ROOT . '/app/repositories/oshi_repository.php';
 $myOshis = findMyOshis(database(), (int) $user['id']);

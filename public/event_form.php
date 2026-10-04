@@ -1,6 +1,7 @@
 <?php
 /** event_form.php の役割：1公演の共有基本情報と会場の登録・編集・コピー用フォームを表示する。 */
-require_once __DIR__.'/../app/helpers/event_view.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/app/helpers/event_view.php';
 $copying = isset($_GET['copy_from']);
 if ($copying && isset($_GET['id'])) throw new ScheduleOperationException('コピーと編集は同時に指定できません。',422);
 $editing = isset($_GET['id']);

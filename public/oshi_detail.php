@@ -1,7 +1,8 @@
 <?php
 /** oshi_detail.php の役割：共有推しの詳細とメンバーを表示し、作成者へ推し編集・メンバー追加フォームを提供する。 */
 declare(strict_types=1);
-require_once __DIR__ . '/../middleware/auth.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/middleware/auth.php';
 $user = requireAuth();
 require_once PROJECT_ROOT . '/app/validators/oshi_validator.php';
 require_once PROJECT_ROOT . '/app/repositories/oshi_repository.php';

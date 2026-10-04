@@ -1,6 +1,7 @@
 <?php
 /** event_detail.php の役割：共有公演と自分だけの当落・TODO・遠征への入口を分けて表示する。 */
-require_once __DIR__.'/../app/helpers/event_view.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/app/helpers/event_view.php';
 require_once PROJECT_ROOT.'/app/helpers/payment_view.php';
 $event=findEvent(database(),(int)$user['id'],eventPageId());$pageTitle=$event['title'];
 require PROJECT_ROOT.'/includes/header.php';

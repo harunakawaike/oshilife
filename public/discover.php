@@ -1,7 +1,8 @@
 <?php
 /** discover.php の役割：公開中の予定を検索し、本人のカレンダーへ追加する。 */
 declare(strict_types=1);
-require_once __DIR__ . '/../middleware/auth.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/middleware/auth.php';
 $user = requireAuth();
 require_once PROJECT_ROOT . '/app/repositories/oshi_repository.php';
 require_once PROJECT_ROOT . '/config/schedules.php';

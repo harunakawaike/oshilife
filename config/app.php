@@ -3,6 +3,10 @@
 declare(strict_types=1);
 
 const PROJECT_ROOT = __DIR__ . '/..';
+// CLIと従来のローカル配置も動かす。分離配置では公開入口のbootstrap.phpが実位置を定義する。
+if (!defined('APP_PUBLIC_ROOT')) {
+    define('APP_PUBLIC_ROOT', PROJECT_ROOT . '/public');
+}
 require_once PROJECT_ROOT . '/app/helpers/env.php';
 require_once PROJECT_ROOT . '/app/helpers/view.php';
 // ページの障害でも内部情報を表示せず、利用者には次の行動を日本語で案内する。

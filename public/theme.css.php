@@ -1,7 +1,8 @@
 <?php
 /** theme.css.php の役割：本人の配色を外部CSSとして返す。インラインCSSを許可せず既存CSPを維持する。 */
 declare(strict_types=1);
-require_once __DIR__ . '/../middleware/auth.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/middleware/auth.php';
 require_once PROJECT_ROOT . '/app/helpers/theme.php';
 $user = currentUser();
 $theme = userTheme($user ? (int) $user['id'] : null);

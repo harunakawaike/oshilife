@@ -1,6 +1,7 @@
 <?php
 /** trip_detail.php の役割：本人の遠征に属する公演・交通・ホテル・TODO・会場を一画面にまとめる。 */
-require_once __DIR__.'/../app/helpers/event_view.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/app/helpers/event_view.php';
 require_once PROJECT_ROOT.'/app/helpers/payment_view.php';
 $trip=findTripDetail(database(),(int)$user['id'],eventPageId());$event=$trip['event'];$pageTitle=$trip['trip_name'];
 require PROJECT_ROOT.'/includes/header.php';

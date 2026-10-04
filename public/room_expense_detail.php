@@ -1,6 +1,7 @@
 <?php
 /** room_expense_detail.php の役割：共同支出の共有内訳と保存時の名前を表示し、権限がある本人に編集・取消を案内する。 */
-require_once __DIR__.'/../app/helpers/room_expense_view.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/app/helpers/room_expense_view.php';
 $roomId=eventPageId('room_id');$id=eventPageId();$expense=findRoomExpense(database(),(int)$user['id'],$roomId,$id);
 $pageTitle='共同支出の詳細';require PROJECT_ROOT.'/includes/header.php';
 ?>

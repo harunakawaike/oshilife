@@ -1,6 +1,7 @@
 <?php
 /** expense_form.php の役割：本人の支出登録・編集、交通や宿泊からの反映内容を確認する画面。 */
-require_once __DIR__.'/../app/helpers/money_view.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/app/helpers/money_view.php';
 $userId = (int)$user['id'];
 $record = isset($_GET['id'])?findMoneyRecord(database(),'expenses',$userId,eventPageId()):null;
 $source = null;

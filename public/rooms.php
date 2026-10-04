@@ -1,6 +1,7 @@
 <?php
 /** rooms.php の役割：本人が参加中のルーム・明示的なルーム作成フォームを表示する。 */
-require_once __DIR__.'/../app/helpers/room_view.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/app/helpers/room_view.php';
 $rooms=listRooms(database(),(int)$user['id']);
 $pageTitle='連番ルーム';
 require PROJECT_ROOT.'/includes/header.php';

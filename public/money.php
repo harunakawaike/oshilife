@@ -1,6 +1,7 @@
 <?php
 /** money.php の役割：年間の残高・積立・支出、月別内訳と特効換算を本人だけに表示する。 */
-require_once __DIR__.'/../app/helpers/money_view.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/app/helpers/money_view.php';
 [$year,$oshiId] = moneyFilters((int)$user['id'],$_GET);
 $options = moneyOshiOptions((int)$user['id']);
 $options[''] = 'すべての推し';

@@ -1,7 +1,8 @@
 <?php
 /** schedule_form.php の役割：新規登録・作成者の編集・取り込んだ予定の個人編集フォームを共通化する。 */
 declare(strict_types=1);
-require_once __DIR__ . '/../middleware/auth.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/middleware/auth.php';
 $user = requireAuth();
 require_once PROJECT_ROOT . '/app/repositories/schedule_repository.php';
 require_once PROJECT_ROOT . '/app/repositories/oshi_repository.php';

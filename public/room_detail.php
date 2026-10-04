@@ -1,6 +1,7 @@
 <?php
 /** room_detail.php の役割：参加中メンバーへイベント・コンパクトなメンバー・トーク・同ページの共同支出を表示する。 */
-require_once __DIR__.'/../app/helpers/room_expense_view.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/app/helpers/room_expense_view.php';
 $roomId=eventPageId('room_id');$userId=(int)$user['id'];
 $room=requireRoom(database(),$userId,$roomId);
 $members=roomMembers(database(),$userId,$roomId);

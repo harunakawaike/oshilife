@@ -1,6 +1,7 @@
 <?php
 /** saving_form.php の役割：共通または推し別の積立を本人が登録・編集・削除する画面。 */
-require_once __DIR__.'/../app/helpers/money_view.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/app/helpers/money_view.php';
 $record = isset($_GET['id'])?findMoneyRecord(database(),'savings',(int)$user['id'],eventPageId()):null;
 $pageTitle = $record?'積立を編集':'積立を登録';
 require PROJECT_ROOT.'/includes/header.php';

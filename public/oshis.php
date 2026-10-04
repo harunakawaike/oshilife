@@ -1,7 +1,8 @@
 <?php
 /** oshis.php の役割：自分の推し一覧、共有推し検索、新しい推し作成の画面を表示する。 */
 declare(strict_types=1);
-require_once __DIR__ . '/../middleware/auth.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/middleware/auth.php';
 $user = requireAuth();
 require_once PROJECT_ROOT . '/app/validators/oshi_validator.php';
 $pageTitle = '推し管理';

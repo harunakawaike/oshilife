@@ -1,7 +1,8 @@
 <?php
 /** schedule_detail.php の役割：閲覧権限を確認し、予定・情報元・同期状態と本人ができる操作を表示する。 */
 declare(strict_types=1);
-require_once __DIR__ . '/../middleware/auth.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/middleware/auth.php';
 $user = requireAuth();
 require_once PROJECT_ROOT . '/app/repositories/schedule_repository.php';
 require_once PROJECT_ROOT . '/app/validators/schedule_validator.php';

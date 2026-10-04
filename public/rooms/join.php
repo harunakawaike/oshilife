@@ -1,7 +1,8 @@
 <?php
 /** join.php の役割：招待リンクを確認し、本人が参加ボタンを押すまでメンバーを作らない。 */
 declare(strict_types=1);
-require_once __DIR__.'/../../middleware/auth.php';
+require_once __DIR__ . '/../bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/middleware/auth.php';
 // URLのトークンを他ページへのRefererに流さず、ブラウザーのキャッシュにも残さない。
 header('Referrer-Policy: no-referrer');
 $token=$_GET['token']??null;
@@ -12,7 +13,7 @@ if (currentUser()===null) {
     if ($validFormat) $_SESSION['room_join_token']=$token;
     redirectTo('login.php');
 }
-require_once __DIR__.'/../../app/helpers/room_view.php';
+require_once APP_PRIVATE_ROOT . '/app/helpers/room_view.php';
 $pageTitle='連番ルームへの招待';$invite=null;$error=null;
 try { $invite=previewRoomInviteLink(database(),(int)$user['id'],$token); }
 catch (ScheduleOperationException $exception) { $error=$exception->getMessage();http_response_code($exception->getCode()); }

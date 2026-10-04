@@ -1,6 +1,7 @@
 <?php
 /** event_companions.php の役割：本人だけの同行者一覧・追加・編集・利用終了を表示する。 */
-require_once __DIR__.'/../app/helpers/event_view.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/app/helpers/event_view.php';
 require_once PROJECT_ROOT.'/app/repositories/participant_repository.php';
 $eventId = eventPageId('event_id');
 $participants = listParticipants(database(), (int)$user['id'], $eventId);

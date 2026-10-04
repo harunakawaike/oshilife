@@ -1,6 +1,7 @@
 <?php
 /** travel_form.php の役割：本人の遠征に交通・宿泊を複数登録・編集する入力画面。 */
-require_once __DIR__.'/../app/helpers/event_view.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/app/helpers/event_view.php';
 $trip=requireOwnTrip(database(),(int)$user['id'],eventPageId('trip_id'));
 $kind=$_GET['kind']??'transport';
 if (!in_array($kind,['transport','accommodation'],true)) throw new ScheduleOperationException('種類が正しくありません。',404);

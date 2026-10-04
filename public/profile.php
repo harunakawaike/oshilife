@@ -1,7 +1,8 @@
 <?php
 /** profile.php の役割：マイページ画面を表示する。共通middlewareでログインを確認し、本人の配色設定とアカウント情報を出す。 */
 declare(strict_types=1);
-require_once __DIR__ . '/../middleware/auth.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/middleware/auth.php';
 $user = requireAuth();
 require_once PROJECT_ROOT . '/app/helpers/theme.php';
 $theme = userTheme((int) $user['id']);

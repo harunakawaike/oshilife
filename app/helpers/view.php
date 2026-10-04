@@ -19,7 +19,7 @@ function appUrl(string $path): string
 function assetUrl(string $path): string
 {
     // 呼び出し元は共通ヘッダー内の固定パス。テーマなど本人別の動的CSSには使わない。
-    $version = substr(hash_file('sha256', PROJECT_ROOT . '/public/' . $path), 0, 12);
+    $version = substr(hash_file('sha256', APP_PUBLIC_ROOT . '/' . $path), 0, 12);
     return appUrl($path) . '?v=' . $version;
 }
 

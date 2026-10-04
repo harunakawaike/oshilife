@@ -1,6 +1,7 @@
 <?php
 /** room_expenses.php の役割：参加中のルームメンバーへ同じ共同支出一覧を表示する。個人会計は集計しない。 */
-require_once __DIR__.'/../app/helpers/room_expense_view.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/app/helpers/room_expense_view.php';
 $roomId=eventPageId('room_id');$userId=(int)$user['id'];$room=requireRoom(database(),$userId,$roomId);
 $include=($_GET['include_cancelled']??'0')==='1';$expenses=listRoomExpenses(database(),$userId,$roomId,$include);
 $pageTitle='ルームのお金';require PROJECT_ROOT.'/includes/header.php';

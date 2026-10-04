@@ -1,6 +1,7 @@
 <?php
 /** events.php の役割：共有イベントを検索し、本人の当落と一緒に一覧表示する。 */
-require_once __DIR__.'/../app/helpers/event_view.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/app/helpers/event_view.php';
 $oshis=findMyOshis(database(),(int)$user['id']);
 require PROJECT_ROOT.'/includes/header.php';
 ?>

@@ -1,7 +1,8 @@
 <?php
 /** corrections.php の役割：自分の予定へ届いた修正提案を確認し、承認・却下・履歴表示を行う画面。 */
 declare(strict_types=1);
-require_once __DIR__ . '/../middleware/auth.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once APP_PRIVATE_ROOT . '/middleware/auth.php';
 $user = requireAuth();
 require_once PROJECT_ROOT . '/config/feedback.php';
 $pageTitle = '届いた修正提案'; $pageStyle = 'feedback'; $pageScripts = ['schedules','corrections']; $activePage = 'profile';
