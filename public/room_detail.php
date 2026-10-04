@@ -1,5 +1,5 @@
 <?php
-/** room_detail.php の役割：参加中メンバーへイベント・コンパクトなメンバー・トーク案内・同ページの共同支出を表示する。 */
+/** room_detail.php の役割：参加中メンバーへイベント・コンパクトなメンバー・トーク・同ページの共同支出を表示する。 */
 require_once __DIR__.'/../app/helpers/room_expense_view.php';
 $roomId=eventPageId('room_id');$userId=(int)$user['id'];
 $room=requireRoom(database(),$userId,$roomId);
@@ -9,7 +9,7 @@ $owner=$room['my_role']==='owner';$active=$room['status']==='active';
 $links=$owner ? roomInviteLinks(database(),$userId,$roomId) : [];
 $available=$owner && $active ? roomAvailableEvents(database(),$userId,$roomId) : [];
 $expenses=listRoomExpenses(database(),$userId,$roomId,true);
-$extraStyles=['rooms','room_expenses','room_workspace'];$pageScripts=['rooms','room_expenses','room_workspace'];
+$extraStyles=['rooms','room_expenses','room_workspace','room_chat'];$pageScripts=['rooms','room_expenses','room_workspace','room_chat'];
 $pageTitle=$room['name'];
 require PROJECT_ROOT.'/includes/header.php';
 ?>
@@ -59,9 +59,7 @@ require PROJECT_ROOT.'/includes/header.php';
 <?php endif; ?>
 
 </section>
-<section id="room-talk" class="room-talk" aria-labelledby="room-talk-title"><h2 id="room-talk-title">トーク</h2>
-<div class="room-talk-placeholder"><span aria-hidden="true">♫</span><p>このルームのメンバー同士で<br>イベントについて話せるようになります。</p><p class="caption">トーク機能は次のStepで利用できます。</p></div>
-</section>
+<?php require PROJECT_ROOT.'/includes/room_chat.php'; ?>
 <?php require PROJECT_ROOT.'/includes/room_money.php'; ?>
 <section class="room-management"><details><summary>ルーム管理</summary>
 <?php if ($owner && $active): ?>

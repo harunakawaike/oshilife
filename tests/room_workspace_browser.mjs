@@ -48,7 +48,7 @@ try {
         assert(await evaluate('document.querySelector(".room-members-compact").offsetHeight<document.querySelector("#room-talk").offsetHeight'));
         assert.equal(await evaluate('document.querySelector(".room-invite-panel").open'),false);
         assert.equal(await evaluate('document.querySelector(".room-management details").open'),false);
-        assert(await evaluate('document.querySelector("#room-talk").innerText.includes("次のStep")'));
+        assert(await evaluate('document.querySelector("#room-chat-form")!==null'));
         await capture(label+'-workspace');
         // 招待は必要な時だけ開く。発行・コピー・再発行・無効化も従来API。
         await evaluate('document.querySelector(".room-invite-panel summary").click()');

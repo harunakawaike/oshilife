@@ -1,0 +1,17 @@
+/* 既存のテーマ色を使い、ルームの中心に内部スクロールする会話領域を配置する。 */
+.room-chat {min-height:580px;}
+.room-chat-history {height:400px;overflow-y:auto;overscroll-behavior:contain;padding:16px 8px;display:flex;flex-direction:column;gap:18px;}
+.room-chat-message {max-width:80%;align-self:flex-start;min-width:100px;}
+.room-chat-message.is-me {align-self:flex-end;}
+.room-chat-author {font-size:.85rem;font-weight:600;margin:0 0 5px;overflow-wrap:anywhere;}
+.room-chat-body {padding:12px 16px;border:1px solid var(--border);border-radius:16px;background:var(--bg);white-space:pre-wrap;overflow-wrap:anywhere;margin:0;line-height:1.7;}
+.is-me .room-chat-body {border-color:var(--accent);border-inline-end-width:4px;}
+.room-chat-message.is-deleted .room-chat-body {color:var(--muted);font-size:.9rem;}
+.room-chat-meta {display:flex;gap:12px;align-items:center;justify-content:flex-end;margin-top:4px;color:var(--muted);font-size:.75rem;}
+.room-chat-delete {background:transparent;border:0;color:var(--muted);padding:8px;cursor:pointer;font:inherit;min-height:36px;}
+#room-chat-form label {display:block;margin-bottom:8px;}
+#room-chat-input {width:100%;min-height:96px;resize:vertical;border:1px solid var(--border);border-radius:12px;padding:12px;background:var(--surface);color:var(--ink);font:inherit;}
+.room-chat-send {display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px;}
+.room-chat-send .button {width:auto;min-width:90px;}
+#room-chat-status {font-size:.9rem;overflow-wrap:anywhere;}
+@media(max-width:640px){.room-chat {padding:20px;}.room-chat-history{height:350px;padding:12px 0;}.room-chat-message{max-width:90%;}.room-chat-body{padding:10px 12px;}.room-chat-delete{min-height:44px;}#room-chat-input{font-size:16px;}}
