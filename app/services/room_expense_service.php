@@ -1,7 +1,8 @@
 <?php
-/** room_expense_service.php の役割：共同支出本体と内訳を一括保存する。精算や個人expensesへの反映は行わない。 */
+/** room_expense_service.php の役割：共同支出本体と内訳を一括保存する。変更成功時に精算済み状態を解除する。個人expensesには反映しない。 */
 declare(strict_types=1);
 require_once __DIR__.'/event_service.php';
+require_once __DIR__.'/room_settlement_state_service.php';
 require_once __DIR__.'/../repositories/room_expense_repository.php';
 require_once __DIR__.'/../validators/room_expense_validator.php';
 
@@ -29,6 +30,7 @@ function saveRoomExpense(int $userId, int $roomId, array $raw, ?int $id = null):
             requireRoomExpenseEditor($room,$existing,$userId);
             requireRoomExpenseVersion($existing,$raw['version']??null);
         }
+        requireSettlementChangeConfirmation($pdo,$userId,$roomId,$raw['settlement_token']??null);
         $input=validateRoomExpenseInput($raw);$shares=$input['shares'];unset($input['shares']);
         $candidates=[];
         foreach(roomExpenseCandidates($pdo,$userId,$roomId) as $member) $candidates[(int)$member['user_id']]=$member;
@@ -65,17 +67,20 @@ function saveRoomExpense(int $userId, int $roomId, array $raw, ?int $id = null):
         // ブラウザーの計算を信用せず、保存後の実際のSUMも検査して不整合なら本体ごと戻す。
         $sum=(int)eventQuery($pdo,'SELECT SUM(share_amount) FROM room_expense_members WHERE room_expense_id=?',[$id])->fetchColumn();
         if ($sum!==$input['total_amount']) throw new ScheduleOperationException('負担額の合計が支出総額と一致していません',422);
+        resetRoomSettlement($pdo,$roomId);
         return $id;
     });
 }
 
 /** 取消は履歴を残す状態変更。精算や返金・個人会計の記録は作らない。 */
-function cancelRoomExpense(int $userId, int $roomId, int $id, mixed $version): void
+function cancelRoomExpense(int $userId, int $roomId, int $id, mixed $version, mixed $settlementToken = null): void
 {
-    eventTransaction(function(PDO $pdo) use($userId,$roomId,$id,$version): void {
+    eventTransaction(function(PDO $pdo) use($userId,$roomId,$id,$version,$settlementToken): void {
         $room=requireRoom($pdo,$userId,$roomId,false,true,true);
         $expense=roomExpenseRecord($pdo,$roomId,$id,true);
         requireRoomExpenseEditor($room,$expense,$userId);requireRoomExpenseVersion($expense,$version);
+        requireSettlementChangeConfirmation($pdo,$userId,$roomId,$settlementToken);
         eventQuery($pdo,"UPDATE room_expenses SET status='cancelled',version=version+1 WHERE id=?",[$id]);
+        resetRoomSettlement($pdo,$roomId);
     });
 }

@@ -24,6 +24,6 @@ function runRoomExpenseApi(string $action): void
     $id=scheduleId($raw['id']??null);
     if ($action==='detail') apiSuccess(['expense'=>findRoomExpense($pdo,$userId,$roomId,$id)]);
     if ($action==='update') saveRoomExpense($userId,$roomId,$raw,$id);
-    if ($action==='cancel') cancelRoomExpense($userId,$roomId,$id,$raw['version']??null);
+    if ($action==='cancel') cancelRoomExpense($userId,$roomId,$id,$raw['version']??null,$raw['settlement_token']??null);
     apiSuccess(['id'=>$id]);
 }

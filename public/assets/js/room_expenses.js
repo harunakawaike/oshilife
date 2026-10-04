@@ -1,6 +1,13 @@
 /** room_expenses.js の役割：共同支出の整数円の均等割り・合計表示・保存・取消を行う。最終検証はPHPでも行う。 */
 'use strict';
 (() => {
+    /** 保存直前に最新の精算状態を取得する。フォームを開いた時点では状態を変更しない。 */
+    window.confirmRoomExpenseChange=async roomId=>{
+        const summary=await apiRequest(`api/rooms/expenses/settlement-summary.php?room_id=${encodeURIComponent(roomId)}`,'GET');
+        if(summary.settlement_status!=='settled')return {};
+        if(!window.confirm('このルームは精算済みです。\n共同支出を変更すると精算済み状態を解除します。\n変更して未精算に戻しますか？'))return null;
+        return {settlement_token:summary.confirmation_token};
+    };
     /** 小数・指数・負数を黙って丸めず、入力不備として返す。最大9桁なのでJSでも整数を正確に計算できる。 */
     function yen(value) {return /^[0-9]{1,9}$/.test(value)?Number(value):null;}
     /** 同じフォーム処理を通常ページとルーム内ダイアログの両方へ取り付ける。 */
@@ -41,6 +48,9 @@
                 const input=Object.fromEntries(new FormData(form));input.room_id=form.dataset.roomId;
                 input.shares=selected().map(row=>({user_id:row.dataset.userId,share_amount:row.querySelector('.share-amount').value}));
                 if(form.dataset.id){input.id=form.dataset.id;input.version=form.dataset.version;}
+                const confirmation=await window.confirmRoomExpenseChange(form.dataset.roomId);
+                if(confirmation===null){message.textContent='変更をキャンセルしました。';return;}
+                Object.assign(input,confirmation);
                 const result=await apiRequest(`api/rooms/expenses/${form.dataset.id?'update':'create'}.php`,'POST',input);
                 if(form.dataset.inline==='true') {
                     form.dataset.saved='true';
@@ -57,7 +67,7 @@
     cancel?.addEventListener('submit',async event=>{
         event.preventDefault();if(cancel.dataset.saving==='true' || !window.confirm('共同支出を取り消しますか？履歴は残ります。'))return;
         const button=cancel.querySelector('button');const message=cancel.querySelector('.event-message');button.disabled=true;cancel.dataset.saving='true';
-        try {await apiRequest('api/rooms/expenses/cancel.php','POST',{room_id:cancel.dataset.roomId,id:cancel.dataset.id,version:cancel.dataset.version});window.location.reload();}
+        try {const confirmation=await window.confirmRoomExpenseChange(cancel.dataset.roomId);if(confirmation===null)return;await apiRequest('api/rooms/expenses/cancel.php','POST',{room_id:cancel.dataset.roomId,id:cancel.dataset.id,version:cancel.dataset.version,...confirmation});window.location.reload();}
         catch(error){message.textContent=error.message;}
         finally{button.disabled=false;cancel.dataset.saving='false';}
     });

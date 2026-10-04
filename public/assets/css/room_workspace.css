@@ -30,3 +30,6 @@
 .room-settlement-breakdown { margin-top:16px; }.room-settlement-breakdown>summary { cursor:pointer; font-size:.85rem; padding:8px 0; }
 .room-settlement-person { border-top:1px solid var(--border); padding:8px 0; }.room-settlement-person h4 { margin:8px 0; }
 .room-settlement-person dl { margin:0; display:grid; gap:6px; }.room-settlement-person dl div { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; }.room-settlement-person dd { margin:0; }
+
+/* テーマ色を使い、文字でも完了状態が分かるようにする。 */
+.room-settled-badge {font-weight:700; border-left:4px solid var(--accent); padding:.6rem 1rem;}

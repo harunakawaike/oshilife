@@ -8,7 +8,7 @@ def snapshot():
     """全テーブルの既存行を比較し、個人会計や参加者へ副作用がないことを確認する。"""
     php=r'''
     define('PROJECT_ROOT',$argv[1]);require PROJECT_ROOT.'/app/helpers/env.php';loadEnv(PROJECT_ROOT.'/.env');require PROJECT_ROOT.'/config/database.php';$p=database();$out=[];
-    foreach($p->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN) as $table){$rows=$p->query('SELECT * FROM '.$table.' ORDER BY id')->fetchAll();$out[$table]=hash('sha256',serialize($rows));}echo json_encode($out);
+    foreach($p->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN) as $table){$rows=$p->query('SELECT * FROM '.$table.' ORDER BY '.($table==='room_settlements'?'room_id':'id'))->fetchAll();$out[$table]=hash('sha256',serialize($rows));}echo json_encode($out);
     '''
     return json.loads(subprocess.check_output([args.php,'-r',php,str(root)]))
 

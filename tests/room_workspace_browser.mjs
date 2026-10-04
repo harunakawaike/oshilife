@@ -82,13 +82,33 @@ try {
         assert.equal(await evaluate('document.querySelector(".room-settlement-transfers strong").textContent'),label==='pc'?'¥12,000':'¥6,000');
         await capture(label+'-money');
         assert.equal(await evaluate('performance.timeOrigin'),origin);
+        // 精算確認はキャンセルできる。ownerによる確定後もフォームを開くだけでは解除しない。
+        await evaluate(`window.lastConfirm='';window.confirm=t=>{window.lastConfirm=t;return false;};document.querySelector('[data-mark-settled]').click()`);
+        await waitFor(`window.lastConfirm.includes('実際の支払い') && !document.querySelector('[data-mark-settled]').disabled`);
+        assert.equal(await evaluate(`document.querySelector('.room-settled-badge')!==null`),false);
+        await evaluate(`window.confirm=()=>true;document.querySelector('[data-mark-settled]').click()`);
+        await waitFor(`document.querySelector('.room-settled-badge')`);
+        await capture(label+'-settled');
+        assert.equal(await evaluate('performance.timeOrigin'),origin);
+        await evaluate(`document.querySelector('[data-expense-form="${id}"]').click()`);
+        await waitFor('document.getElementById("room-expense-form")');
+        assert(await evaluate(`document.querySelector('.room-settled-badge')!==null`));
+        await evaluate(`window.lastConfirm='';window.confirm=t=>{window.lastConfirm=t;return false;};document.getElementById('room-expense-form').requestSubmit()`);
+        await waitFor(`document.querySelector('#room-expense-form .event-message').textContent.includes('キャンセル')`);
+        assert(await evaluate(`window.lastConfirm.includes('未精算に戻し') && document.querySelector('.room-settled-badge')!==null`));
+        await evaluate(`window.confirm=()=>true;document.getElementById('room-expense-form').requestSubmit()`);
+        await waitFor(`!document.getElementById('room-expense-dialog').open && !document.querySelector('.room-settled-badge')`);
+        await evaluate(`document.querySelector('[data-mark-settled]').click()`);
+        await waitFor(`document.querySelector('.room-settled-badge')`);
         // memberも同じ内訳を閲覧。ownerが登録した支出を編集するボタンは出ない。
         await cookies(input.memberCookies);await navigate(roomPage);
         await evaluate(`document.querySelector('[data-expense-id="${id}"]').open=true`);
         assert(await evaluate(`document.querySelector('[data-expense-id="${id}"]').innerText.includes('¥12,000')`));
         assert.equal(await evaluate(`document.querySelector('[data-expense-id="${id}"] [data-expense-form]')!==null`),false);
         assert.equal(await evaluate('document.querySelector(".room-invite-panel")!==null'),false);
+        assert(await evaluate(`document.querySelector('.room-settled-badge')!==null && document.querySelector('[data-mark-settled]')===null`));
         await capture(label+'-member');
+        await evaluate('window.confirm=()=>true');
         // member自身の登録も同ページで完結。
         const memberOrigin=await evaluate('performance.timeOrigin');
         await evaluate('document.querySelector("[data-expense-form]").click()');

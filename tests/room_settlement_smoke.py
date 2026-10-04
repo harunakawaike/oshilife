@@ -16,7 +16,7 @@ def snapshot():
     """各テーブルの全行をハッシュ化し、試験前後の実データが不変であることを確認する。"""
     php=r'''
     define('PROJECT_ROOT',$argv[1]);require PROJECT_ROOT.'/app/helpers/env.php';loadEnv(PROJECT_ROOT.'/.env');require PROJECT_ROOT.'/config/database.php';$p=database();$out=[];
-    foreach($p->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN) as $table){$rows=$p->query('SELECT * FROM '.$table.' ORDER BY id')->fetchAll();$out[$table]=hash('sha256',serialize($rows));}echo json_encode($out);
+    foreach($p->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN) as $table){$rows=$p->query('SELECT * FROM '.$table.' ORDER BY '.($table==='room_settlements'?'room_id':'id'))->fetchAll();$out[$table]=hash('sha256',serialize($rows));}echo json_encode($out);
     '''
     return json.loads(subprocess.check_output([args.php,'-r',php,str(root)]))
 
@@ -33,7 +33,7 @@ try:
         return post(a,'rooms/expenses/create',data,201)['id'],data
     def detail(id):return get(a,'rooms/expenses/detail',room_id=room,id=id)['expense']
     def cancel(id):post(a,'rooms/expenses/cancel',{'room_id':room,'id':id,'version':detail(id)['version']})
-    assert summary()=={'balances':[],'transfers':[]}
+    assert summary()['balances']==[] and summary()['transfers']==[] and summary()['settlement_status']=='unsettled'
     hotel,hotel_data=create(aid,{aid:10000,bid:10000},'ホテル')
     assert summary()['transfers']==transfer(10000)
     traffic,traffic_data=create(bid,{aid:6000,bid:6000},'交通')

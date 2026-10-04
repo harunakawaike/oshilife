@@ -6,7 +6,7 @@ $expenseCount=count(array_filter($expenses,fn($expense)=>$expense['status']==='a
 <h2 id="room-money-title">お金</h2>
 <?php require PROJECT_ROOT.'/includes/room_settlement.php'; ?>
 <details class="room-money-panel" open><summary>共同支出 <?= $expenseCount ?>件</summary>
-<p class="caption">個人のお金管理への反映と精算済みの記録は、まだ行いません。</p>
+<p class="caption">共同支出は個人のお金管理には反映されません。</p>
 <p id="room-money-message" role="status" tabindex="-1"></p>
 <button type="button" class="button secondary" data-refresh-money hidden>表示を更新</button>
 <?php if ($active): ?><button type="button" class="button secondary" data-expense-form="">＋ 共同支出を追加</button><?php endif; ?>

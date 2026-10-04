@@ -48,10 +48,25 @@
         const button=event.target.closest('button');if(!button)return;
         if(button.matches('[data-expense-form]'))openForm(button);
         if(button.matches('[data-refresh-money]'))refreshMoney();
+        if(button.matches('[data-mark-settled]')) {
+            if(button.disabled)return;
+            button.disabled=true;
+            try {
+                const summary=await apiRequest(`api/rooms/expenses/settlement-summary.php?room_id=${roomId}`,'GET');
+                const names=new Map(summary.balances.map(person=>[person.user_id,person.display_name]));
+                const lines=summary.transfers.map(t=>`${names.get(t.from_user_id)} → ${names.get(t.to_user_id)}に支払う ¥${t.amount.toLocaleString('ja-JP')}`);
+                const text=lines.length?lines.join('\n'):'現在、精算が必要な金額はありません';
+                if(window.confirm(`このルームの精算を完了にしますか？\n\n現在の精算：\n${text}\n\n実際の支払いが完了していることを確認してください。`)) {
+                    await apiRequest('api/rooms/expenses/mark-settled.php','POST',{room_id:roomId,confirmation_token:summary.confirmation_token});
+                    await refreshMoney();
+                }
+            }catch(error){document.getElementById('room-money-message').textContent=error.message;}
+            finally{button.disabled=false;}
+        }
         if(button.matches('[data-cancel-expense]')) {
             if(button.disabled || !window.confirm('共同支出を取り消しますか？履歴は残ります。'))return;
             button.disabled=true;
-            try {await apiRequest('api/rooms/expenses/cancel.php','POST',{room_id:roomId,id:button.dataset.cancelExpense,version:button.dataset.version});await refreshMoney();}
+            try {const confirmation=await window.confirmRoomExpenseChange(roomId);if(confirmation===null){button.disabled=false;return;}await apiRequest('api/rooms/expenses/cancel.php','POST',{room_id:roomId,id:button.dataset.cancelExpense,version:button.dataset.version,...confirmation});await refreshMoney();}
             catch(error){document.getElementById('room-money-message').textContent=error.message;button.disabled=false;}
         }
     });

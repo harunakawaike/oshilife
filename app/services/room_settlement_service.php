@@ -1,5 +1,5 @@
 <?php
-/** room_settlement_service.php の役割：有効な共同支出から精算案を整数円で算出する。結果や送金状態はDB保存しない。 */
+/** room_settlement_service.php の役割：有効な共同支出から精算案を整数円で算出する。計算結果は保存せず、ルームの精算完了状態を併せて返す。 */
 declare(strict_types=1);
 require_once __DIR__.'/../repositories/room_expense_repository.php';
 
@@ -78,12 +78,27 @@ function calculateRoomSettlement(array $expenses): array
     return ['balances'=>array_values($people),'transfers'=>$transfers];
 }
 
+/** 状態行がまだない既存ルームも未精算として返す。呼び出し前にルーム認可を必ず行う。 */
+function roomSettlementState(PDO $pdo, int $roomId): array
+{
+    $state=eventQuery($pdo,"SELECT s.settlement_status,s.settled_at,s.settled_by_user_id,
+        CASE WHEN u.deleted_at IS NULL THEN u.display_name ELSE '退会済みユーザー' END AS settled_by_display_name
+        FROM room_settlements s LEFT JOIN users u ON u.id=s.settled_by_user_id WHERE s.room_id=?",[$roomId])->fetch();
+    return $state ?: ['settlement_status'=>'unsettled','settled_at'=>null,'settled_by_user_id'=>null,'settled_by_display_name'=>null];
+}
+
 /** 閲覧者はactiveメンバー限定。1回のSELECTで本体・内訳を読み、同時編集で別時点の行を混ぜない。 */
 function roomSettlementSummary(PDO $pdo, int $userId, int $roomId): array
 {
-    requireRoom($pdo,$userId,$roomId);
+    // 状態と支出を同じ時点で読む。既存の更新トランザクション内ではそのロックを再利用する。
+    if (!$pdo->inTransaction()) {
+        $pdo->beginTransaction();
+        try {$result=roomSettlementSummary($pdo,$userId,$roomId);$pdo->commit();return $result;}
+        catch (Throwable $error) {$pdo->rollBack();throw $error;}
+    }
+    requireRoom($pdo,$userId,$roomId,false,false,true);
     // 退出状態で絞らない。過去の支払者・負担者はsnapshotとIDで計算に含める。
-    $rows=eventQuery($pdo,"SELECT e.id,e.status,e.total_amount,e.paid_by_user_id,e.paid_by_name_snapshot,
+    $rows=eventQuery($pdo,"SELECT e.id,e.version,e.status,e.total_amount,e.paid_by_user_id,e.paid_by_name_snapshot,
         s.user_id AS share_user_id,s.display_name_snapshot,s.share_amount
         FROM room_expenses e LEFT JOIN room_expense_members s ON s.room_expense_id=e.id AND s.room_id=e.room_id
         WHERE e.room_id=? AND e.status='active' ORDER BY e.id,s.id",[$roomId])->fetchAll();
@@ -93,5 +108,9 @@ function roomSettlementSummary(PDO $pdo, int $userId, int $roomId): array
         if (!isset($expenses[$id])) $expenses[$id]=['id'=>$id,'status'=>$row['status'],'total_amount'=>$row['total_amount'],'paid_by_user_id'=>$row['paid_by_user_id'],'paid_by_name_snapshot'=>$row['paid_by_name_snapshot'],'shares'=>[]];
         if ($row['share_user_id']!==null) $expenses[$id]['shares'][]=['user_id'=>$row['share_user_id'],'display_name_snapshot'=>$row['display_name_snapshot'],'share_amount'=>$row['share_amount']];
     }
-    return calculateRoomSettlement(array_values($expenses));
+    $state=roomSettlementState($pdo,$roomId);
+    // 行のversionも含めるため、金額が同じ編集でも確認後の変更を検出する。
+    // 状態は含めず、同じ支出に対する精算ボタン二重送信を安全な無操作にする。
+    $token=hash('sha256',json_encode([$roomId,$rows],JSON_THROW_ON_ERROR));
+    return calculateRoomSettlement(array_values($expenses))+$state+['confirmation_token'=>$token];
 }
