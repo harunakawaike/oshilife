@@ -1,10 +1,12 @@
 /** room_expenses.js の役割：共同支出の整数円の均等割り・合計表示・保存・取消を行う。最終検証はPHPでも行う。 */
 'use strict';
 (() => {
-    const form=document.getElementById('room-expense-form');
     /** 小数・指数・負数を黙って丸めず、入力不備として返す。最大9桁なのでJSでも整数を正確に計算できる。 */
     function yen(value) {return /^[0-9]{1,9}$/.test(value)?Number(value):null;}
-    if(form) {
+    /** 同じフォーム処理を通常ページとルーム内ダイアログの両方へ取り付ける。 */
+    function initializeForm(form) {
+        if (!form || form.dataset.initialized==='true') return;
+        form.dataset.initialized='true';
         const rows=[...form.querySelectorAll('.room-expense-member')];
         const message=form.querySelector('.event-message');
         const selected=()=>rows.filter(row=>row.querySelector('.share-selected').checked);
@@ -12,13 +14,13 @@
         function showBalance() {
             rows.forEach(row=>row.querySelector('.share-amount').disabled=!row.querySelector('.share-selected').checked);
             const amounts=selected().map(row=>yen(row.querySelector('.share-amount').value));const total=yen(form.elements.total_amount.value);
-            const balance=document.getElementById('room-expense-balance');
+            const balance=form.querySelector('#room-expense-balance');
             if(total===null || amounts.includes(null)){balance.textContent='総額と負担額を整数円で入力してください。';return;}
             const sum=amounts.reduce((a,b)=>a+b,0);balance.textContent=`負担額の合計 ¥${sum.toLocaleString('ja-JP')} / 総額 ¥${total.toLocaleString('ja-JP')}（差額 ¥${(total-sum).toLocaleString('ja-JP')}）`;
         }
         form.addEventListener('input',showBalance);form.addEventListener('change',showBalance);showBalance();
         /** 端数は支払者→room_member ID昇順。退出済みの固定負担を除いた残額だけを配分する。 */
-        document.getElementById('room-expense-split').addEventListener('click',()=>{
+        form.querySelector('#room-expense-split').addEventListener('click',()=>{
             message.textContent='';
             const total=yen(form.elements.total_amount.value);const chosen=selected();
             const locked=chosen.filter(row=>row.dataset.locked==='true');
@@ -33,18 +35,23 @@
         });
         /** 画面の値をJSONとしてAPIへ送る。ユーザーが直接APIを呼んでもサーバーが権限・合計を検証する。 */
         form.addEventListener('submit',async event=>{
-            event.preventDefault();if(form.dataset.saving==='true')return;
+            event.preventDefault();if(form.dataset.saving==='true' || form.dataset.saved==='true')return;
             const button=form.querySelector('[type="submit"]');button.disabled=true;form.dataset.saving='true';message.textContent='保存しています…';
             try {
                 const input=Object.fromEntries(new FormData(form));input.room_id=form.dataset.roomId;
                 input.shares=selected().map(row=>({user_id:row.dataset.userId,share_amount:row.querySelector('.share-amount').value}));
                 if(form.dataset.id){input.id=form.dataset.id;input.version=form.dataset.version;}
                 const result=await apiRequest(`api/rooms/expenses/${form.dataset.id?'update':'create'}.php`,'POST',input);
-                window.location.assign(appUrl(`room_expense_detail.php?room_id=${form.dataset.roomId}&id=${result.id}`));
+                if(form.dataset.inline==='true') {
+                    form.dataset.saved='true';
+                    document.dispatchEvent(new CustomEvent('room-expense-saved',{detail:{id:result.id}}));
+                } else window.location.assign(appUrl(`room_expense_detail.php?room_id=${form.dataset.roomId}&id=${result.id}`));
             }catch(error){message.textContent=error.message;message.focus();}
-            finally{button.disabled=false;form.dataset.saving='false';}
+            finally{button.disabled=form.dataset.saved==='true';form.dataset.saving='false';}
         });
     }
+    initializeForm(document.getElementById('room-expense-form'));
+    document.addEventListener('room-expense-form-loaded',event=>initializeForm(event.detail.form));
     /** 取消はPOSTで履歴の状態だけを変える。二重操作と、古い内容を見たままの取消を防ぐ。 */
     const cancel=document.getElementById('room-expense-cancel');
     cancel?.addEventListener('submit',async event=>{

@@ -1,0 +1,32 @@
+/* ルームはイベント→メンバー→トークを主役にし、招待・管理を補助的な開閉領域にする。 */
+.room-workspace-heading { margin:20px 0 24px; }.room-workspace-heading h1 { margin:0; }.room-workspace-heading p { margin:0 0 4px; }
+.room-events-top>h2 { font-size:1rem; }.room-event-strip { display:flex; gap:16px; overflow-x:auto; padding:4px 0 14px; scroll-snap-type:x proximity; }
+.room-event-strip>.room-event { flex:1 0 340px; max-width:100%; margin:0; padding:24px; scroll-snap-align:start; border:1px solid var(--border); }
+.room-event-strip h3 { font-size:1.3rem; margin:12px 0; }.room-event-tools { margin-top:12px; font-size:.85rem; }
+.room-events-top>details { margin:8px 0 20px; }.room-events-top summary,.room-management summary,.room-invite-panel summary { cursor:pointer; padding:10px 0; }
+.room-members-compact { display:flex; flex-wrap:wrap; gap:10px 20px; align-items:baseline; padding:16px 0; border-top:1px solid var(--border); }
+.room-members-compact h2 { font-size:.95rem; margin:0; }.room-members-compact .room-people { display:flex; flex-wrap:wrap; gap:8px 18px; margin:0; }.room-people small { color:var(--muted); }
+.room-invite-panel { flex-basis:100%; }.room-invite-panel>summary { width:fit-content; color:var(--accent); font-size:.9rem; }
+.room-invite-content { max-width:640px; border-top:1px solid var(--border); padding:16px 0; }.room-invite-content h3 { font-size:1rem; }
+.room-talk { margin:20px 0 32px; padding:28px; background:var(--surface); border:1px solid var(--border); border-radius:24px; min-height:340px; }
+.room-talk h2 { margin:0; font-size:1.25rem; }.room-talk-placeholder { min-height:240px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }.room-talk-placeholder>span { font-size:2rem; color:var(--accent); }.room-talk-placeholder p { margin:8px 0; }
+.room-money { border-top:1px solid var(--border); padding:20px 0; }.room-money>h2 { font-size:1.2rem; }.room-money-panel>summary { cursor:pointer; font-weight:600; padding:8px 0; }
+.room-cancelled-filter { display:flex; gap:8px; align-items:center; margin:16px 0; font-size:.85rem; }.room-cancelled-filter input { width:auto; }
+.room-money-item { border-bottom:1px solid var(--border); }.room-money-item>summary { cursor:pointer; display:flex; align-items:baseline; justify-content:space-between; gap:20px; padding:18px 0; }.room-money-item>summary:after { content:'⌄'; }.room-money-item[open]>summary:after { content:'⌃'; }.room-money-item>summary>span { flex:1; min-width:0; overflow-wrap:anywhere; }.room-money-item>summary>strong { white-space:nowrap; }
+.room-money-content { padding:8px 20px 20px; background:var(--surface); border-radius:16px; }.room-money-content>h2,.room-money-content>.room-expense-total { display:none; }
+.room-management { border-top:1px solid var(--border); margin:12px 0 24px; padding-top:12px; }.room-management>details>summary { font-size:.9rem; color:var(--muted); }
+#room-expense-dialog { width:min(900px,calc(100% - 32px)); max-height:90dvh; border:1px solid var(--border); border-radius:20px; background:var(--bg); color:var(--ink); padding:24px; }
+#room-expense-dialog::backdrop { background:#0006; }#room-expense-dialog>header { display:flex; align-items:center; justify-content:space-between; gap:16px; }#room-expense-dialog>header h2 { font-size:1.3rem; margin:0; }
+#room-expense-dialog-body .card { border:0; box-shadow:none; padding:12px 0; background:transparent; }#room-expense-dialog-body .event-fields { margin-bottom:0; }
+@media(max-width:640px) { .room-event-strip>.room-event { flex-basis:88%; padding:20px; }.room-talk { min-height:300px; padding:20px; }.room-talk-placeholder { min-height:210px; }.room-money-content { padding:8px 12px 16px; }#room-expense-dialog { padding:16px; width:calc(100% - 16px); } }
+/* 共通ボタンの全幅指定をdialogの閉じる操作だけ解除し、スマホでも見出しの幅を確保する。 */
+#room-expense-dialog>header .button { width:auto; flex:none; white-space:nowrap; min-height:44px; }
+/* 精算案を一覧の上で簡潔に示し、支払・負担の内訳は折りたたむ。 */
+.room-settlement { margin:16px 0 24px; padding:20px; background:var(--surface); border:1px solid var(--border); border-radius:16px; }
+.room-settlement h3 { margin:0 0 12px; font-size:1rem; }
+.room-settlement-transfers { list-style:none; padding:0; margin:0; display:grid; gap:12px; }
+.room-settlement-transfers li { display:flex; justify-content:space-between; align-items:baseline; gap:20px; }
+.room-settlement-transfers span { min-width:0; overflow-wrap:anywhere; }.room-settlement-transfers strong { white-space:nowrap; font-size:1.15rem; }
+.room-settlement-breakdown { margin-top:16px; }.room-settlement-breakdown>summary { cursor:pointer; font-size:.85rem; padding:8px 0; }
+.room-settlement-person { border-top:1px solid var(--border); padding:8px 0; }.room-settlement-person h4 { margin:8px 0; }
+.room-settlement-person dl { margin:0; display:grid; gap:6px; }.room-settlement-person dl div { display:flex; flex-wrap:wrap; justify-content:space-between; gap:8px; }.room-settlement-person dd { margin:0; }
